@@ -114,9 +114,10 @@ body with the user.
 
 - [x] **Module 1 — Project setup & structure** — Flutter project, folder structure, deps
   (dio + Riverpod), analysis/linting. Builds & runs to a placeholder screen. ✅
-- [ ] **Module 2 — Config & environment** — typed config (API base URL + the four mock/live
-  flags) via `--dart-define` / config file, with an example file. Device-reachability values
-  documented. Confirm the app can read config.
+- [x] **Module 2 — Config & environment** — typed config (API base URL + the four mock/live
+  flags) via `--dart-define-from-file`, with a committed example file (`config/example.json`).
+  Device-reachability values documented (`config/README.md`). Boot screen + logs print the
+  resolved config to confirm the app reads it. ✅
 - [ ] **Module 3 — HTTP client & error handling** — request wrapper: `{ data }` unwrap,
   `{ error }` parsing, 15s timeout, network/timeout error types, optional Bearer header
   (unused for now). `assetUrl()` helper to absolutize `"/images/..."` paths.
@@ -185,7 +186,8 @@ endpoint, and EAS/store deployment.
 | Module | Status | Notes |
 |---|---|---|
 | 1 — Project setup & structure | ✅ Done | Riverpod + dio; feature folders; lints; boots to placeholder; analyze/test/build-web all green |
-| 2 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
+| 2 — Config & environment | ✅ Done | Typed `config` via `--dart-define-from-file`; `config/example.json` template + `config/README.md`; boot screen prints resolved config; 5 tests + analyze + build-web green |
+| 3 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
 
 ---
 
@@ -193,10 +195,14 @@ endpoint, and EAS/store deployment.
 
 ```bash
 cd "/Users/abdulhannan/Projects/MC Flutter App"
-flutter run -d chrome
+cp config/example.json config/dev.json   # first run only (git-ignored local config)
+flutter run -d chrome --dart-define-from-file=config/dev.json
 ```
 
-Hot-reload with `r`, full restart `R`, quit `q`.
+Hot-reload with `r`, full restart `R`, quit `q`. (Config is compile-time, so
+changing `config/dev.json` needs a full restart, not hot-reload.) See
+[`config/README.md`](config/README.md) for every flag and the device-reachability
+table.
 
 **Checks:**
 ```bash

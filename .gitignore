@@ -60,6 +60,11 @@ lib/src/config/env.dart
 lib/src/config/secrets.dart
 secrets.dart
 
+# --dart-define-from-file config (Module 2): ignore local/real values,
+# keep the committed template.
+config/*.json
+!config/example.json
+
 # Android signing
 android/key.properties
 key.properties

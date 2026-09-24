@@ -1,0 +1,9 @@
+{
+  "APP_ENV": "development",
+  "API_BASE_URL": "http://localhost:5050",
+  "CATALOG_MODE": "live",
+  "BOOKINGS_MODE": "live",
+  "PAYMENTS_MODE": "mock",
+  "NGENIUS_ENV": "sandbox",
+  "PUSH_MODE": "mock"
+}

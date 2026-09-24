@@ -5,14 +5,27 @@
 // tree — the idiomatic Flutter equivalent of the RN app's zustand stores +
 // react-query providers mounted at the root.
 //
-// Module 1 scope: this only boots to a placeholder screen to prove the project
-// builds and runs in Chrome. Theming (Module 5), config (Module 2), the HTTP
-// client (Module 3), models (Module 4), and real screens land in later modules.
+// Module 2 scope: typed config (API base URL + the four mock/live flags) is now
+// loaded from `--dart-define-from-file` and surfaced on the boot screen to prove
+// the running build reads it. Theming (Module 5), the HTTP client (Module 3),
+// models (Module 4), and real screens land in later modules.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'src/config/app_config.dart';
+
 void main() {
+  // Log the resolved config once at startup — a fast way to confirm which
+  // API URL and flags this build actually loaded.
+  if (kDebugMode) {
+    debugPrint('[config] resolved:\n${config.describe()}');
+    if (!isApiBaseUrlValid) {
+      debugPrint('[config] WARNING: API_BASE_URL is empty. '
+          'Pass --dart-define-from-file=config/dev.json');
+    }
+  }
   runApp(const ProviderScope(child: MicrocareApp()));
 }
 
@@ -64,8 +77,37 @@ class _PlaceholderHomeScreen extends StatelessWidget {
             const Text('AC servicing & booking — Dubai'),
             const SizedBox(height: 24),
             const Text(
-              'Module 1 ✓  Project scaffolded',
+              'Module 2 ✓  Config & environment',
               style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            // Proof that the build read its config. Removed once real screens land.
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 24),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Loaded config',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    config.describe(),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
