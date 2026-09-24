@@ -1,0 +1,29 @@
+# Analysis / linting config for the Microcare Flutter app.
+# Builds on the standard flutter_lints ruleset with a few extra guards that
+# keep the codebase consistent as it grows across the 15 modules.
+
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-raw-types: true
+  errors:
+    # Missing awaits on Futures are bugs (e.g. sequential booking submits in
+    # Module 14 must be awaited) — treat as errors, not hints.
+    unawaited_futures: error
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+
+linter:
+  rules:
+    - always_declare_return_types
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_locals
+    - avoid_print
+    - require_trailing_commas
+    - directives_ordering

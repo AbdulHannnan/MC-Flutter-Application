@@ -1,0 +1,96 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview related
+.widget_preview/
+
+# ---------------------------------------------------------------------------
+# Sensitive files / secrets — DO NOT COMMIT
+# ---------------------------------------------------------------------------
+
+# Environment / config secrets
+.env
+.env.*
+!.env.example
+*.env
+lib/src/config/env.dart
+lib/src/config/secrets.dart
+secrets.dart
+
+# Android signing
+android/key.properties
+key.properties
+*.jks
+*.keystore
+*.p12
+
+# Android local machine config (SDK paths, etc.)
+android/local.properties
+android/gradle/wrapper/gradle-wrapper.jar
+
+# Firebase config
+**/google-services.json
+**/GoogleService-Info.plist
+firebase_options.dart
+.firebase/
+firebase-debug.log
+.firebaserc
+
+# iOS / Apple signing & provisioning
+*.mobileprovision
+*.p8
+*.cer
+*.certSigningRequest
+ios/Flutter/ephemeral/
+
+# Generic key/certificate material
+*.pem
+*.key
+*.crt
+
+# Editor / tooling local state
+.claude/settings.local.json
+.vscode/settings.json
