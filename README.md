@@ -118,9 +118,10 @@ body with the user.
   flags) via `--dart-define-from-file`, with a committed example file (`config/example.json`).
   Device-reachability values documented (`config/README.md`). Boot screen + logs print the
   resolved config to confirm the app reads it. ✅
-- [ ] **Module 3 — HTTP client & error handling** — request wrapper: `{ data }` unwrap,
-  `{ error }` parsing, 15s timeout, network/timeout error types, optional Bearer header
-  (unused for now). `assetUrl()` helper to absolutize `"/images/..."` paths.
+- [x] **Module 3 — HTTP client & error handling** — dio request wrapper (`ApiClient` +
+  `apiClientProvider`): `{ data }` unwrap, `{ error }` / 422 `{ error, details }` parsing,
+  15s timeout, timeout/network `ApiException` flags, optional Bearer header (unused for now).
+  `assetUrl()` helper to absolutize `"/images/..."` paths. ✅
 - [ ] **Module 4 — Data models** — `Money` (minor units + currency), `ServiceCategory` (incl.
   the synthetic single "AC Services" category), `ServiceOption`, `ServiceAddon`, `Service`,
   `BookingLocation`, `TimeSlot`, `CartItem`, `Booking` — matching blueprint shapes and the
@@ -187,7 +188,8 @@ endpoint, and EAS/store deployment.
 |---|---|---|
 | 1 — Project setup & structure | ✅ Done | Riverpod + dio; feature folders; lints; boots to placeholder; analyze/test/build-web all green |
 | 2 — Config & environment | ✅ Done | Typed `config` via `--dart-define-from-file`; `config/example.json` template + `config/README.md`; boot screen prints resolved config; 5 tests + analyze + build-web green |
-| 3 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
+| 3 — HTTP client & error handling | ✅ Done | dio `ApiClient` + `apiClientProvider` in `lib/src/core/network/`; `{ data }` unwrap, `ApiException` (timeout/network flags, `{ error }`/422 parsing), 15s timeout, Bearer seam, `assetUrl()`; 14 new tests (19 total) + analyze + build-web green |
+| 4 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
 
 ---
 
