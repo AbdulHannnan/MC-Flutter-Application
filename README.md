@@ -135,7 +135,7 @@ body with the user.
 - [x] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
   `options[]`) and `GET /api/addons?serviceId={id}`; on-device category/search filtering;
   caching layer (react-query equivalent). Fabricate the single synthetic "AC Services" category. ✅
-- [] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
+- [x] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
   validation (email regex, password ≥ 8, confirm match), show/hide password, LOCAL mock auth
   (persisted). Auth gates the app like the RN `Stack.Protected` groups. ✅
 - [ ] **Module 8 — Navigation & route guards** — stack-based navigator (no tabs, no drawer).
