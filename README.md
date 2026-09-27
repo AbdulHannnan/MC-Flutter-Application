@@ -138,7 +138,7 @@ body with the user.
 - [x] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
   validation (email regex, password ≥ 8, confirm match), show/hide password, LOCAL mock auth
   (persisted). Auth gates the app like the RN `Stack.Protected` groups. ✅
-- [x] **Module 8 — Navigation & route guards** — stack-based navigator (no tabs, no drawer).
+- [] **Module 8 — Navigation & route guards** — stack-based navigator (no tabs, no drawer).
   Two route sets swapped by auth state; deep-link bounce; cold-start splash while restoring the
   session; booking-flow guards that redirect to the step owning missing draft data. ✅
 - [ ] **Module 9 — Home / dashboard** — greeting, My-bookings + cart icons (cart with live
