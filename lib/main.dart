@@ -5,11 +5,12 @@
 // tree — the idiomatic Flutter equivalent of the RN app's zustand stores +
 // react-query providers mounted at the root.
 //
-// Module 6 scope: the catalog DATA LAYER — a data source (CatalogRepository, live
-// GET /api/services + /api/addons adapters, plus an offline mock seed) and the
-// react-query-equivalent Riverpod caching providers. The boot screen now fetches
-// the catalog through those providers as a live proof (loading / error / empty /
-// data states). Real screens and routing land in later modules.
+// Module 7 scope: MOCK AUTH. The boot screen is now an auth GATE that reads
+// [sessionProvider]: it shows a splash while the saved session restores, the
+// signed-out AuthFlow (Login / Sign up / Forgot-password) when nobody is signed in,
+// and a signed-in placeholder (greeting + Log out, plus the Module 6 catalog proof)
+// once authenticated. Real route guards / splash / route-set swapping land in
+// Module 8 — this gate is the lightweight stand-in that proves the flow.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import 'src/config/app_config.dart';
 import 'src/core/network/api_exception.dart';
 import 'src/core/theme/theme.dart';
 import 'src/core/widgets/widgets.dart';
+import 'src/features/auth/auth.dart';
 import 'src/features/services/services.dart';
 
 void main() {
@@ -34,9 +36,9 @@ void main() {
   runApp(const ProviderScope(child: MicrocareApp()));
 }
 
-/// Root application widget. A single `MaterialApp` — the RN app is a
-/// stack-based navigator (no tabs, no drawer); the real routing arrives in
-/// Module 8. For now it just shows the placeholder home.
+/// Root application widget. A single `MaterialApp` — the RN app is a stack-based
+/// navigator (no tabs, no drawer); the real routing arrives in Module 8. Its home
+/// is the auth [_AppGate].
 class MicrocareApp extends StatelessWidget {
   const MicrocareApp({super.key});
 
@@ -47,17 +49,56 @@ class MicrocareApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       // The Module 5 design system, extracted from the RN src/constants/*.
       theme: AppTheme.light,
-      home: const _PlaceholderHomeScreen(),
+      home: const _AppGate(),
     );
   }
 }
 
-/// Temporary landing screen — now a data-layer PROOF for Module 6: it reads the
-/// catalog through [servicesProvider] (the react-query-equivalent caching layer)
-/// and renders every AsyncValue state, so the data source, adapters and cache are
-/// visibly working end-to-end. Replaced by the real Home / dashboard in Module 9.
-class _PlaceholderHomeScreen extends ConsumerWidget {
-  const _PlaceholderHomeScreen();
+/// The lightweight auth gate (Module 7): splash while the session restores, the
+/// signed-out [AuthFlow], or the signed-in home. Module 8 replaces this with real
+/// route guards + route-set swapping; the three states here mirror what it will do.
+class _AppGate extends ConsumerWidget {
+  const _AppGate();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider);
+
+    if (session.isRestoring) return const _SplashScreen();
+    final user = session.user;
+    if (user != null) return _SignedInHome(user: user);
+    return const AuthFlow();
+  }
+}
+
+/// Shown only during cold-start session restore — a returning user never flashes
+/// the login screen. (Module 8 makes this the real splash.)
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.ac_unit, size: 56, color: AppColors.primary),
+            SizedBox(height: AppSpacing.lg),
+            CircularProgressIndicator(strokeWidth: 2),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The signed-in placeholder — proves mock auth end-to-end (greeting + Log out)
+/// while keeping the Module 6 catalog proof visible as the "protected app".
+/// Replaced by the real Home / dashboard in Module 9.
+class _SignedInHome extends ConsumerWidget {
+  final AuthUser user;
+  const _SignedInHome({required this.user});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,29 +109,41 @@ class _PlaceholderHomeScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.ac_unit, size: 56, color: AppColors.primary),
-              const SizedBox(height: AppSpacing.md),
-              const AppText('Microcare', variant: AppTextVariant.h1),
-              const SizedBox(height: AppSpacing.xs),
-              const AppText(
-                'AC servicing & booking — Dubai',
-                variant: AppTextVariant.body,
-                color: AppTextColor.muted,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.ac_unit, size: 40, color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const AppText('Microcare', variant: AppTextVariant.h2),
+                        AppText('Signed in as ${user.email ?? user.displayName}',
+                            variant: AppTextVariant.caption,
+                            color: AppTextColor.muted),
+                      ],
+                    ),
+                  ),
+                  AppButton(
+                    label: 'Log out',
+                    variant: AppButtonVariant.outline,
+                    size: AppButtonSize.sm,
+                    onPressed: () => ref.read(sessionProvider.notifier).signOut(),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              const AppText('Module 6 ✓  Catalog data layer',
-                  variant: AppTextVariant.h3),
+              const AppText('Module 7 ✓  Mock auth', variant: AppTextVariant.h3),
               const SizedBox(height: AppSpacing.xs),
-              AppText(
-                config.isMockCatalog
-                    ? 'Source: local mock seed (CATALOG_MODE=mock)'
-                    : 'Source: live backend — GET /api/services',
+              const AppText(
+                'You are signed in via the local persisted mock backend.',
                 variant: AppTextVariant.caption,
                 color: AppTextColor.muted,
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // The live catalog proof — the star of this module.
+              // The live catalog proof carried over from Module 6.
               _CatalogProofCard(),
               const SizedBox(height: AppSpacing.lg),
 

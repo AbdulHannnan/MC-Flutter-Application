@@ -36,6 +36,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.4.3
   dio: ^5.11.1
+  # Local key-value persistence for the MOCK auth backend (users + session) and,
+  # later, the cart — the Flutter analog of the RN app's AsyncStorage. Plain and
+  # non-secure by design, matching the mock's "dev-only" note.
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

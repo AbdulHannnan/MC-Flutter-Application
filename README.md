@@ -135,9 +135,9 @@ body with the user.
 - [x] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
   `options[]`) and `GET /api/addons?serviceId={id}`; on-device category/search filtering;
   caching layer (react-query equivalent). Fabricate the single synthetic "AC Services" category. ✅
-- [ ] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
+- [x] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
   validation (email regex, password ≥ 8, confirm match), show/hide password, LOCAL mock auth
-  (persisted). Auth gates the app like the RN `Stack.Protected` groups.
+  (persisted). Auth gates the app like the RN `Stack.Protected` groups. ✅
 - [ ] **Module 8 — Navigation & route guards** — stack-based navigator (no tabs, no drawer).
   Two route sets swapped by auth state; deep-link bounce; cold-start splash while restoring the
   session; booking-flow guards that redirect to the step owning missing draft data.
@@ -195,7 +195,8 @@ endpoint, and EAS/store deployment.
 | 4 — Data models | ✅ Done | Domain models in `lib/src/models/` (barrel `models.dart`): `Money` (int fils, `fromAed`/`format` ported from `aedToMoney`/`formatMoney`), catalog (`Service`/`ServiceOption`/`ServiceAddon`/`ServiceCategory` + synthetic `acServicesCategory`), `TimeSlot`, `LatLng`/`BookingLocation`, `CartItem`/`CartAddon`, `Booking`/`BookingStatus`; domain-shape JSON round-trips. 22 new tests (41 total) + analyze + build-web green |
 | 5 — Design system / theming | ✅ Done | Tokens in `lib/src/core/theme/` (colours, type ramp, spacing, radii) from RN `src/constants/*` → `AppTheme.light`; primitives in `lib/src/core/widgets/` (`AppText`, `AppButton`, `AppCard`, `CategoryChip`, `StatusPill`); boot screen restyled as a live proof. 6 new widget tests (47 total) + analyze + build-web green. **Open: `Money.format` follows RN "99.00 AED" (amount-first) vs README rule #4 "AED xx.xx" — confirm before Module 9 UI.** |
 | 6 — Services API + catalog data layer | ✅ Done | `lib/src/features/services/`: `CatalogRepository` (port of RN `servicesApi.ts`) — live `GET /api/services` + `GET /api/addons?serviceId=` with backend→domain adapters (`label`→name, `"40.00"`→`Money.fromAed`, cheapest option→`basePrice`, relative image→`assetUrl`, `duration`→0), single synthetic `ac-services` category, `ServiceQuery`, `ServiceNotFoundError`, on-device category/search filtering; full offline **mock seed** (`catalog_mock_data.dart`, 5 categories / 13 services) ported from RN `mockData.ts`. React-query-equivalent **caching providers** (`catalog_providers.dart`): `categories/category/services/service` as keyed `autoDispose` families, `AsyncValue` = the `QueryResult` seam, `ref.invalidate` = refetch, `cacheFor` staleTime (5m), Riverpod-native `retry:` (2 + backoff via `catalogRetryPolicy`, no-retry-404 via `serviceRetryPolicy`). Boot screen wired as a live catalog proof (loading/error/empty/data). 19 new tests (66 total) + analyze + build-web green. |
-| 7 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
+| 7 — Auth screens (MOCK) | ✅ Done | `lib/src/features/auth/`: session model (`AuthUser`), pure validation (email regex, password ≥ 8, confirm match) ported from RN `validation.ts`; **local persisted mock backend** (`mock_auth_api.dart`) on `shared_preferences` (new dep; plain/non-secure like RN's AsyncStorage) — signUp/signIn/resetPassword/signOut/getCurrentUser, generic "invalid email or password", duplicate-email guard; consolidated **`SessionController`** (`AsyncNotifier<AuthUser?>`) + `sessionProvider` (restore-on-init; `AsyncValue` tri-state = loading/signedOut/signedIn via `SessionX`) replacing RN's zustand store + AuthProvider + 4 flow hooks. Three screens (Login / Sign up / Forgot-password) with exact fields/copy, show/hide password, per-field + banner errors; new reusable `AppTextField` primitive. Boot screen is now an auth **gate** (splash → `AuthFlow` when signed out → signed-in home w/ greeting + Log out, keeping the Module 6 catalog proof). Route guards / splash / route-set swap deferred to Module 8. 18 new tests (84 total; incl. an e2e sign-up→home→log-out flow) + analyze + build-web green. |
+| 8 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
 
 ---
 
