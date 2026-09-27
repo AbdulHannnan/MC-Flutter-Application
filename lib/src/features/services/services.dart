@@ -9,7 +9,9 @@
 //              adapters + mock seed) and the react-query-equivalent caching
 //              providers (categories/services/service/category), with on-device
 //              category/search filtering.
-// Coming: catalog UI cards & screens (Modules 9–11).
+//   Module 9 — presentational catalog UI: ServiceCard + the QueryBoundary state
+//              renderer (CategoryChip lives in core/widgets from Module 5).
+// Coming: browse & detail screens (Modules 10–11).
 
 export 'catalog_providers.dart'
     show
@@ -28,3 +30,6 @@ export 'catalog_repository.dart'
         catalogRepositoryProvider,
         ServiceQuery,
         ServiceNotFoundError;
+
+export 'widgets/query_boundary.dart' show QueryBoundary;
+export 'widgets/service_card.dart' show ServiceCard;

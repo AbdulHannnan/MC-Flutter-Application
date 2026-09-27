@@ -83,7 +83,8 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Categories'));
+    // "See all" pushes the (stubbed) categories route.
+    await tester.tap(find.text('See all'));
     await tester.pumpAndSettle();
     expect(find.text('Arrives in Module 10.'), findsOneWidget);
 

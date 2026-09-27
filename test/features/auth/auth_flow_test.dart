@@ -50,9 +50,9 @@ void main() {
     await tester.tap(find.text('Create account'));
     await tester.pumpAndSettle();
 
-    // The auth guard redirected the now-signed-in user to Home.
-    expect(find.text('Module 8 ✓  Navigation & route guards'), findsOneWidget);
+    // The auth guard redirected the now-signed-in user to the Home dashboard.
     expect(find.text('Hi Jane 👋'), findsOneWidget);
+    expect(find.text('Popular services'), findsOneWidget);
 
     // Log out → guard bounces back to the signed-out Login screen.
     await tester.tap(find.text('Log out'));

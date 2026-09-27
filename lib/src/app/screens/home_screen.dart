@@ -1,21 +1,24 @@
-// lib/src/app/screens/home_screen.dart — the "/" route, a STUB for Module 8.
+// lib/src/app/screens/home_screen.dart — the "/" route: the Home / dashboard.
+// Dart port of the RN app's `src/app/index.tsx` (Module 9).
 //
-// The real Home / dashboard (greeting, categories strip, popular services, cart
-// badge) arrives in Module 9. For now this proves the routing skeleton: it greets
-// the signed-in user, logs out (which the auth guard turns into a bounce to the
-// login screen), pushes each protected route to show the stack navigator working,
-// and keeps the Module 6 live catalog proof visible.
+// The first screen a signed-in user lands on. It greets them, offers My-bookings +
+// cart shortcuts (the cart shows a live count badge) and log out, a tappable search
+// pill, a horizontal strip of CATEGORIES ("See all" → the full list), and a
+// vertical list of POPULAR SERVICES (the highest-rated few, client-sorted). The
+// catalog comes from the Module 6 read providers; loading / error / empty states
+// come from the shared QueryBoundary. It lives behind the auth guard, so the user
+// is always present. Taps open the (stubbed until their module) detail routes.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../config/app_config.dart';
-import '../../core/network/api_exception.dart';
 import '../../core/theme/theme.dart';
 import '../../core/widgets/widgets.dart';
 import '../../features/auth/auth.dart';
+import '../../features/cart/cart.dart';
 import '../../features/services/services.dart';
+import '../../models/models.dart';
 import '../app_routes.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -24,219 +27,244 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(sessionProvider).user;
+    final categories = ref.watch(categoriesProvider);
+    final services = ref.watch(servicesProvider(ServiceQuery.all));
+    final cartCount = ref.watch(cartCountProvider);
+
+    // Prefer a first name; fall back to the full name, then a friendly default.
+    final greetingName = user?.firstName ?? user?.fullName ?? 'there';
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+          children: [
+            // ── Header: greeting, shortcuts, logout ──
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.ac_unit, size: 40, color: AppColors.primary),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText('Hi ${user?.displayName ?? 'there'} 👋',
-                            variant: AppTextVariant.h2),
-                        const AppText(
-                          'Book AC cleaning, repair & maintenance across Dubai.',
-                          variant: AppTextVariant.caption,
-                          color: AppTextColor.muted,
-                        ),
-                      ],
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: AppText('Hi $greetingName 👋',
+                            variant: AppTextVariant.h2, maxLines: 1),
+                      ),
+                      IconButton(
+                        onPressed: () => context.push(AppRoutes.orders),
+                        icon: const Icon(Icons.receipt_long_outlined),
+                        color: AppColors.text,
+                        tooltip: 'My bookings',
+                      ),
+                      _CartButton(count: cartCount),
+                      TextButton(
+                        onPressed: () =>
+                            ref.read(sessionProvider.notifier).signOut(),
+                        child: const AppText('Log out',
+                            variant: AppTextVariant.caption,
+                            color: AppTextColor.primary),
+                      ),
+                    ],
                   ),
-                  AppButton(
-                    label: 'Log out',
-                    variant: AppButtonVariant.outline,
-                    size: AppButtonSize.sm,
-                    onPressed: () =>
-                        ref.read(sessionProvider.notifier).signOut(),
+                  const SizedBox(height: AppSpacing.xs),
+                  const AppText(
+                    'Book AC cleaning, repair & maintenance across Dubai.',
+                    color: AppTextColor.muted,
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SearchPill(onTap: () => context.push(AppRoutes.search)),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppText('Module 8 ✓  Navigation & route guards',
-                  variant: AppTextVariant.h3),
-              const SizedBox(height: AppSpacing.xs),
-              const AppText(
-                'Tap a destination to push it on the stack (back returns here). '
-                'Log out and the auth guard bounces you to the login screen.',
-                variant: AppTextVariant.caption,
-                color: AppTextColor.muted,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+
+            // ── Categories (horizontal) ──
+            _Section(
+              title: 'Categories',
+              action: _SeeAll(onTap: () => context.push(AppRoutes.categories)),
+              child: QueryBoundary<ServiceCategory>(
+                query: categories,
+                emptyLabel: 'No categories yet.',
+                onRetry: () => ref.invalidate(categoriesProvider),
+                builder: (list) => SizedBox(
+                  height: 150,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    itemCount: list.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(width: AppSpacing.md),
+                    itemBuilder: (context, i) => CategoryChip(
+                      category: list[i],
+                      onTap: () =>
+                          context.push(AppRoutes.categoryOf(list[i].id)),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
+            ),
+            const SizedBox(height: AppSpacing.xl),
 
-              _NavCard(),
-              const SizedBox(height: AppSpacing.lg),
-
-              // The live catalog proof carried over from Module 6.
-              const CatalogProofCard(),
-            ],
-          ),
+            // ── Popular services (vertical, highest-rated first) ──
+            _Section(
+              title: 'Popular services',
+              child: QueryBoundary<Service>(
+                query: services,
+                emptyLabel: 'No services yet.',
+                onRetry: () =>
+                    ref.invalidate(servicesProvider(ServiceQuery.all)),
+                builder: (list) {
+                  final popular = [...list]
+                    ..sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+                  final top = popular.take(5).toList();
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Column(
+                      children: [
+                        for (final service in top) ...[
+                          ServiceCard(
+                            service: service,
+                            onTap: () =>
+                                context.push(AppRoutes.serviceOf(service.id)),
+                          ),
+                          if (service != top.last)
+                            const SizedBox(height: AppSpacing.md),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// A card of buttons that push each protected route — a live proof of the stack
-/// navigator and the route tree.
-class _NavCard extends StatelessWidget {
+/// A titled section: a heading (with an optional right-aligned action) above its
+/// content. The content lays out its own horizontal padding so full-bleed strips
+/// work.
+class _Section extends StatelessWidget {
+  final String title;
+  final Widget? action;
+  final Widget child;
+
+  const _Section({required this.title, required this.child, this.action});
+
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppText('Go to', variant: AppTextVariant.bodyStrong),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const _NavButton('Categories', AppRoutes.categories),
-              const _NavButton('Search', AppRoutes.search),
-              const _NavButton('Cart', AppRoutes.cart),
-              const _NavButton('My bookings', AppRoutes.orders),
-              const _NavButton('About', AppRoutes.about),
-              _NavButton('A service', AppRoutes.serviceOf('svc_split_clean')),
-              const _NavButton('Booking (guarded)', AppRoutes.bookingLocation),
+              AppText(title, variant: AppTextVariant.h3),
+              ?action,
             ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        child,
+      ],
     );
   }
 }
 
-class _NavButton extends StatelessWidget {
-  final String label;
-  final String path;
-  const _NavButton(this.label, this.path);
+class _SeeAll extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SeeAll({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return AppButton(
-      label: label,
-      variant: AppButtonVariant.secondary,
-      size: AppButtonSize.sm,
-      onPressed: () => context.push(path),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: const AppText('See all',
+          variant: AppTextVariant.caption, color: AppTextColor.primary),
     );
   }
 }
 
-/// Reads the whole active catalog and renders each AsyncValue state — loading,
-/// error (with a working "Try again" that invalidates the cache to refetch),
-/// empty, and data (a count plus the first few service names and "from" prices).
-/// Carried over from Module 6 as a live proof; folded into the real Home in
-/// Module 9.
-class CatalogProofCard extends ConsumerWidget {
-  static const _query = ServiceQuery.all;
-
-  const CatalogProofCard({super.key});
+/// The tappable search bar — a pill that opens the search screen (which owns the
+/// input). A soft shadow so it reads as a real affordance, not a plain box.
+class _SearchPill extends StatelessWidget {
+  final VoidCallback onTap;
+  const _SearchPill({required this.onTap});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final servicesAsync = ref.watch(servicesProvider(_query));
-
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppText('Catalog', variant: AppTextVariant.bodyStrong),
-          const SizedBox(height: AppSpacing.sm),
-          servicesAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: AppSpacing.sm),
-                  AppText('Loading services…',
-                      variant: AppTextVariant.body, color: AppTextColor.muted),
-                ],
-              ),
-            ),
-            error: (error, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText(
-                  _describeError(error),
-                  variant: AppTextVariant.body,
-                  color: AppTextColor.danger,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                AppButton(
-                  label: 'Try again',
-                  variant: AppButtonVariant.outline,
-                  size: AppButtonSize.sm,
-                  onPressed: () => ref.invalidate(servicesProvider(_query)),
-                ),
-              ],
-            ),
-            data: (services) => services.isEmpty
-                ? const AppText('No services found.',
-                    variant: AppTextVariant.body, color: AppTextColor.muted)
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText('${services.length} services loaded',
-                          variant: AppTextVariant.caption,
-                          color: AppTextColor.muted),
-                      const SizedBox(height: AppSpacing.sm),
-                      for (final s in services.take(6))
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: AppSpacing.xs),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: AppText(s.name,
-                                    variant: AppTextVariant.body),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              AppText('from ${s.basePrice.format()}',
-                                  variant: AppTextVariant.bodyStrong),
-                            ],
-                          ),
-                        ),
-                      if (services.length > 6)
-                        Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.xs),
-                          child: AppText('+ ${services.length - 6} more',
-                              variant: AppTextVariant.caption,
-                              color: AppTextColor.muted),
-                        ),
-                    ],
-                  ),
-          ),
-        ],
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.sm + 2),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: AppRadii.pillAll,
+          boxShadow: [
+            BoxShadow(
+                color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2)),
+          ],
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.search, size: 20, color: AppColors.textSubtle),
+            SizedBox(width: AppSpacing.sm),
+            AppText('Search AC services…', color: AppTextColor.muted),
+          ],
+        ),
       ),
     );
   }
+}
 
-  String _describeError(Object error) {
-    if (error is ApiException) {
-      if (error.isTimeout) {
-        return 'Request timed out. Check the backend is running.';
-      }
-      if (error.isNetwork) {
-        return 'Network error. Is the backend reachable at '
-            '${config.apiBaseUrl}?';
-      }
-      return error.message;
-    }
-    return 'Could not load the catalog: $error';
+/// The cart shortcut with a live count badge (hidden when empty).
+class _CartButton extends StatelessWidget {
+  final int count;
+  const _CartButton({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          onPressed: () => context.push(AppRoutes.cart),
+          icon: const Icon(Icons.shopping_cart_outlined),
+          color: AppColors.text,
+          tooltip: 'Your cart',
+        ),
+        if (count > 0)
+          Positioned(
+            right: 2,
+            top: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: AppText('$count',
+                  variant: AppTextVariant.caption,
+                  color: AppTextColor.inverse,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, height: 1)),
+            ),
+          ),
+      ],
+    );
   }
 }
