@@ -8,7 +8,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../auth_validation.dart';
@@ -18,10 +20,7 @@ import '../widgets/auth_shell.dart';
 import '../widgets/form_error_banner.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
-  /// Go back to the login screen.
-  final VoidCallback onBackToLogin;
-
-  const ForgotPasswordScreen({super.key, required this.onBackToLogin});
+  const ForgotPasswordScreen({super.key});
 
   @override
   ConsumerState<ForgotPasswordScreen> createState() =>
@@ -141,7 +140,8 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             const AppText('Remembered it? ', color: AppTextColor.muted),
-            AuthLink('Back to log in', onTap: widget.onBackToLogin),
+            AuthLink('Back to log in',
+                onTap: () => context.go(AppRoutes.signIn)),
           ],
         ),
       ],

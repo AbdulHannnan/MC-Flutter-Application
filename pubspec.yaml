@@ -40,6 +40,10 @@ dependencies:
   # later, the cart — the Flutter analog of the RN app's AsyncStorage. Plain and
   # non-secure by design, matching the mock's "dev-only" note.
   shared_preferences: ^2.3.2
+  # Declarative, URL-based routing with redirect guards + deep linking — the
+  # idiomatic Flutter analog of the RN app's expo-router file-based routes +
+  # Stack.Protected groups.
+  go_router: ^18.0.1
 
 dev_dependencies:
   flutter_test:

@@ -8,7 +8,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../auth_validation.dart';
@@ -18,17 +20,7 @@ import '../widgets/auth_shell.dart';
 import '../widgets/form_error_banner.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  /// Go to the sign-up screen.
-  final VoidCallback onSignUp;
-
-  /// Go to the forgot-password screen.
-  final VoidCallback onForgotPassword;
-
-  const LoginScreen({
-    super.key,
-    required this.onSignUp,
-    required this.onForgotPassword,
-  });
+  const LoginScreen({super.key});
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -121,7 +113,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             AuthLink(
               'Forgot password?',
               color: AppTextColor.muted,
-              onTap: widget.onForgotPassword,
+              onTap: () => context.push(AppRoutes.forgotPassword),
             ),
           ],
         ),
@@ -141,7 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             const AppText("Don't have an account? ",
                 color: AppTextColor.muted),
-            AuthLink('Sign up', onTap: widget.onSignUp),
+            AuthLink('Sign up', onTap: () => context.go(AppRoutes.signUp)),
           ],
         ),
       ],

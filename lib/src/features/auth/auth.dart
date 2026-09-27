@@ -8,15 +8,15 @@
 //   Module 7 — the session model (AuthUser), pure validation, a LOCAL persisted
 //              MOCK backend (mock_auth_api.dart, shared_preferences), the
 //              consolidated SessionController + sessionProvider, and the three
-//              screens (Login / Sign up / Forgot-password) with the signed-out
-//              AuthFlow that swaps between them.
+//              screens (Login / Sign up / Forgot-password).
+//   Module 8 — the screens are wired into the app router (src/app/app_router.dart)
+//              behind the auth guard; navigation uses go_router directly.
 //
 // NOTE: auth runs on a LOCAL MOCK (see mock_auth_api.dart) — NOT secure, for
 // development only. The session model is provider-agnostic, so a real provider
 // replaces just mock_auth_api.dart + the controller's calls, and screens keep
-// working. Route guards / splash / route-set swapping arrive in Module 8.
+// working.
 
-export 'auth_flow.dart' show AuthFlow;
 export 'auth_user.dart' show AuthUser;
 export 'auth_validation.dart'
     show
