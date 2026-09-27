@@ -132,9 +132,9 @@ body with the user.
   RN `src/constants/*`, composed into `AppTheme.light` (`ThemeData`). Primitives in
   `lib/src/core/widgets/`: `AppText`, `AppButton` (5 variants × 3 sizes, loading/disabled),
   `AppCard`, `CategoryChip`, `StatusPill`. Boot screen restyled as a live proof. ✅
-- [ ] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
+- [x] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
   `options[]`) and `GET /api/addons?serviceId={id}`; on-device category/search filtering;
-  caching layer (react-query equivalent). Fabricate the single synthetic "AC Services" category.
+  caching layer (react-query equivalent). Fabricate the single synthetic "AC Services" category. ✅
 - [ ] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
   validation (email regex, password ≥ 8, confirm match), show/hide password, LOCAL mock auth
   (persisted). Auth gates the app like the RN `Stack.Protected` groups.
@@ -194,7 +194,8 @@ endpoint, and EAS/store deployment.
 | 3 — HTTP client & error handling | ✅ Done | dio `ApiClient` + `apiClientProvider` in `lib/src/core/network/`; `{ data }` unwrap, `ApiException` (timeout/network flags, `{ error }`/422 parsing), 15s timeout, Bearer seam, `assetUrl()`; 14 new tests (19 total) + analyze + build-web green |
 | 4 — Data models | ✅ Done | Domain models in `lib/src/models/` (barrel `models.dart`): `Money` (int fils, `fromAed`/`format` ported from `aedToMoney`/`formatMoney`), catalog (`Service`/`ServiceOption`/`ServiceAddon`/`ServiceCategory` + synthetic `acServicesCategory`), `TimeSlot`, `LatLng`/`BookingLocation`, `CartItem`/`CartAddon`, `Booking`/`BookingStatus`; domain-shape JSON round-trips. 22 new tests (41 total) + analyze + build-web green |
 | 5 — Design system / theming | ✅ Done | Tokens in `lib/src/core/theme/` (colours, type ramp, spacing, radii) from RN `src/constants/*` → `AppTheme.light`; primitives in `lib/src/core/widgets/` (`AppText`, `AppButton`, `AppCard`, `CategoryChip`, `StatusPill`); boot screen restyled as a live proof. 6 new widget tests (47 total) + analyze + build-web green. **Open: `Money.format` follows RN "99.00 AED" (amount-first) vs README rule #4 "AED xx.xx" — confirm before Module 9 UI.** |
-| 6 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
+| 6 — Services API + catalog data layer | ✅ Done | `lib/src/features/services/`: `CatalogRepository` (port of RN `servicesApi.ts`) — live `GET /api/services` + `GET /api/addons?serviceId=` with backend→domain adapters (`label`→name, `"40.00"`→`Money.fromAed`, cheapest option→`basePrice`, relative image→`assetUrl`, `duration`→0), single synthetic `ac-services` category, `ServiceQuery`, `ServiceNotFoundError`, on-device category/search filtering; full offline **mock seed** (`catalog_mock_data.dart`, 5 categories / 13 services) ported from RN `mockData.ts`. React-query-equivalent **caching providers** (`catalog_providers.dart`): `categories/category/services/service` as keyed `autoDispose` families, `AsyncValue` = the `QueryResult` seam, `ref.invalidate` = refetch, `cacheFor` staleTime (5m), Riverpod-native `retry:` (2 + backoff via `catalogRetryPolicy`, no-retry-404 via `serviceRetryPolicy`). Boot screen wired as a live catalog proof (loading/error/empty/data). 19 new tests (66 total) + analyze + build-web green. |
+| 7 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
 
 ---
 

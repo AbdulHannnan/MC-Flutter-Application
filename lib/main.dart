@@ -5,19 +5,21 @@
 // tree — the idiomatic Flutter equivalent of the RN app's zustand stores +
 // react-query providers mounted at the root.
 //
-// Module 5 scope: the design system (colours, type ramp, spacing, radii) is wired
-// into the app's `ThemeData` (AppTheme.light) and the boot screen is restyled with
-// the new primitives (AppText, AppCard, AppButton, StatusPill) to prove the theme
-// and widgets render. Real screens and routing land in later modules.
+// Module 6 scope: the catalog DATA LAYER — a data source (CatalogRepository, live
+// GET /api/services + /api/addons adapters, plus an offline mock seed) and the
+// react-query-equivalent Riverpod caching providers. The boot screen now fetches
+// the catalog through those providers as a live proof (loading / error / empty /
+// data states). Real screens and routing land in later modules.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/config/app_config.dart';
+import 'src/core/network/api_exception.dart';
 import 'src/core/theme/theme.dart';
 import 'src/core/widgets/widgets.dart';
-import 'src/models/models.dart';
+import 'src/features/services/services.dart';
 
 void main() {
   // Log the resolved config once at startup — a fast way to confirm which
@@ -50,14 +52,15 @@ class MicrocareApp extends StatelessWidget {
   }
 }
 
-/// Temporary landing screen — now a design-system PROOF for Module 5: it renders
-/// the new primitives (AppText, AppCard, AppButton, StatusPill) so the theme and
-/// widgets are visibly working. Replaced by the real Home / dashboard in Module 9.
-class _PlaceholderHomeScreen extends StatelessWidget {
+/// Temporary landing screen — now a data-layer PROOF for Module 6: it reads the
+/// catalog through [servicesProvider] (the react-query-equivalent caching layer)
+/// and renders every AsyncValue state, so the data source, adapters and cache are
+/// visibly working end-to-end. Replaced by the real Home / dashboard in Module 9.
+class _PlaceholderHomeScreen extends ConsumerWidget {
   const _PlaceholderHomeScreen();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -75,44 +78,20 @@ class _PlaceholderHomeScreen extends StatelessWidget {
                 color: AppTextColor.muted,
               ),
               const SizedBox(height: AppSpacing.lg),
-              const AppText('Module 5 ✓  Design system',
+              const AppText('Module 6 ✓  Catalog data layer',
                   variant: AppTextVariant.h3),
-              const SizedBox(height: AppSpacing.md),
-
-              // Buttons sampler.
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  AppButton(label: 'Primary', onPressed: () {}),
-                  AppButton(
-                      label: 'Outline',
-                      variant: AppButtonVariant.outline,
-                      onPressed: () {}),
-                  AppButton(
-                      label: 'Ghost',
-                      variant: AppButtonVariant.ghost,
-                      onPressed: () {}),
-                  AppButton(
-                      label: 'Danger',
-                      variant: AppButtonVariant.danger,
-                      onPressed: () {}),
-                  const AppButton(label: 'Disabled'),
-                ],
+              const SizedBox(height: AppSpacing.xs),
+              AppText(
+                config.isMockCatalog
+                    ? 'Source: local mock seed (CATALOG_MODE=mock)'
+                    : 'Source: live backend — GET /api/services',
+                variant: AppTextVariant.caption,
+                color: AppTextColor.muted,
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Status pills sampler.
-              const Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  StatusPill(status: BookingStatus.pending),
-                  StatusPill(status: BookingStatus.confirmed),
-                  StatusPill(status: BookingStatus.completed),
-                  StatusPill(status: BookingStatus.cancelled),
-                ],
-              ),
+              // The live catalog proof — the star of this module.
+              _CatalogProofCard(),
               const SizedBox(height: AppSpacing.lg),
 
               // Loaded config — proof the build read its config (from Module 2).
@@ -140,5 +119,110 @@ class _PlaceholderHomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Reads the whole active catalog and renders each AsyncValue state — loading,
+/// error (with a working "Try again" that invalidates the cache to refetch),
+/// empty, and data (a count plus the first few service names and "from" prices).
+class _CatalogProofCard extends ConsumerWidget {
+  static const _query = ServiceQuery.all;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final servicesAsync = ref.watch(servicesProvider(_query));
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AppText('Catalog', variant: AppTextVariant.bodyStrong),
+          const SizedBox(height: AppSpacing.sm),
+          servicesAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  AppText('Loading services…',
+                      variant: AppTextVariant.body, color: AppTextColor.muted),
+                ],
+              ),
+            ),
+            error: (error, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  _describeError(error),
+                  variant: AppTextVariant.body,
+                  color: AppTextColor.danger,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                AppButton(
+                  label: 'Try again',
+                  variant: AppButtonVariant.outline,
+                  size: AppButtonSize.sm,
+                  // Invalidate → the provider refetches on the next read (the
+                  // Riverpod equivalent of React Query's refetch()).
+                  onPressed: () => ref.invalidate(servicesProvider(_query)),
+                ),
+              ],
+            ),
+            data: (services) => services.isEmpty
+                ? const AppText('No services found.',
+                    variant: AppTextVariant.body, color: AppTextColor.muted)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText('${services.length} services loaded',
+                          variant: AppTextVariant.caption,
+                          color: AppTextColor.muted),
+                      const SizedBox(height: AppSpacing.sm),
+                      for (final s in services.take(6))
+                        Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: AppText(s.name, variant: AppTextVariant.body),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              AppText('from ${s.basePrice.format()}',
+                                  variant: AppTextVariant.bodyStrong),
+                            ],
+                          ),
+                        ),
+                      if (services.length > 6)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.xs),
+                          child: AppText('+ ${services.length - 6} more',
+                              variant: AppTextVariant.caption,
+                              color: AppTextColor.muted),
+                        ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _describeError(Object error) {
+    if (error is ApiException) {
+      if (error.isTimeout) return 'Request timed out. Check the backend is running.';
+      if (error.isNetwork) {
+        return 'Network error. Is the backend reachable at '
+            '${config.apiBaseUrl}?';
+      }
+      return error.message;
+    }
+    return 'Could not load the catalog: $error';
   }
 }
