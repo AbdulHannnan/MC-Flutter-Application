@@ -127,9 +127,11 @@ body with the user.
   `ServiceAddon`, `Service`, `LatLng`, `BookingLocation`, `TimeSlot`, `CartAddon`, `CartItem`,
   `BookingStatus`, `Booking` in `lib/src/models/` (barrel `models.dart`). Domain-shape
   `toJson`/`fromJson` for local persistence; backend→domain adapters deferred to Module 6. ✅
-- [ ] **Module 5 — Design system / theming** — colours (hex), typography, spacing, button
-  styles, cards, chips, status pills — recreated from the RN `src/constants/*`. This is what
-  makes it look like the prototype.
+- [x] **Module 5 — Design system / theming** — tokens in `lib/src/core/theme/` (`AppColors`
+  + `AppPalette`, `AppSpacing`, `AppRadii`, `AppFontSizes`/`AppTextStyles`) recreated from the
+  RN `src/constants/*`, composed into `AppTheme.light` (`ThemeData`). Primitives in
+  `lib/src/core/widgets/`: `AppText`, `AppButton` (5 variants × 3 sizes, loading/disabled),
+  `AppCard`, `CategoryChip`, `StatusPill`. Boot screen restyled as a live proof. ✅
 - [ ] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
   `options[]`) and `GET /api/addons?serviceId={id}`; on-device category/search filtering;
   caching layer (react-query equivalent). Fabricate the single synthetic "AC Services" category.
@@ -191,7 +193,8 @@ endpoint, and EAS/store deployment.
 | 2 — Config & environment | ✅ Done | Typed `config` via `--dart-define-from-file`; `config/example.json` template + `config/README.md`; boot screen prints resolved config; 5 tests + analyze + build-web green |
 | 3 — HTTP client & error handling | ✅ Done | dio `ApiClient` + `apiClientProvider` in `lib/src/core/network/`; `{ data }` unwrap, `ApiException` (timeout/network flags, `{ error }`/422 parsing), 15s timeout, Bearer seam, `assetUrl()`; 14 new tests (19 total) + analyze + build-web green |
 | 4 — Data models | ✅ Done | Domain models in `lib/src/models/` (barrel `models.dart`): `Money` (int fils, `fromAed`/`format` ported from `aedToMoney`/`formatMoney`), catalog (`Service`/`ServiceOption`/`ServiceAddon`/`ServiceCategory` + synthetic `acServicesCategory`), `TimeSlot`, `LatLng`/`BookingLocation`, `CartItem`/`CartAddon`, `Booking`/`BookingStatus`; domain-shape JSON round-trips. 22 new tests (41 total) + analyze + build-web green |
-| 5 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
+| 5 — Design system / theming | ✅ Done | Tokens in `lib/src/core/theme/` (colours, type ramp, spacing, radii) from RN `src/constants/*` → `AppTheme.light`; primitives in `lib/src/core/widgets/` (`AppText`, `AppButton`, `AppCard`, `CategoryChip`, `StatusPill`); boot screen restyled as a live proof. 6 new widget tests (47 total) + analyze + build-web green. **Open: `Money.format` follows RN "99.00 AED" (amount-first) vs README rule #4 "AED xx.xx" — confirm before Module 9 UI.** |
+| 6 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
 
 ---
 

@@ -5,16 +5,19 @@
 // tree — the idiomatic Flutter equivalent of the RN app's zustand stores +
 // react-query providers mounted at the root.
 //
-// Module 2 scope: typed config (API base URL + the four mock/live flags) is now
-// loaded from `--dart-define-from-file` and surfaced on the boot screen to prove
-// the running build reads it. Theming (Module 5), the HTTP client (Module 3),
-// models (Module 4), and real screens land in later modules.
+// Module 5 scope: the design system (colours, type ramp, spacing, radii) is wired
+// into the app's `ThemeData` (AppTheme.light) and the boot screen is restyled with
+// the new primitives (AppText, AppCard, AppButton, StatusPill) to prove the theme
+// and widgets render. Real screens and routing land in later modules.
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/config/app_config.dart';
+import 'src/core/theme/theme.dart';
+import 'src/core/widgets/widgets.dart';
+import 'src/models/models.dart';
 
 void main() {
   // Log the resolved config once at startup — a fast way to confirm which
@@ -40,76 +43,100 @@ class MicrocareApp extends StatelessWidget {
     return MaterialApp(
       title: 'Microcare',
       debugShowCheckedModeBanner: false,
-      // Placeholder theme; the real design system (colours, typography,
-      // spacing extracted from the RN src/constants/*) is Module 5.
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0A84FF)),
-        useMaterial3: true,
-      ),
+      // The Module 5 design system, extracted from the RN src/constants/*.
+      theme: AppTheme.light,
       home: const _PlaceholderHomeScreen(),
     );
   }
 }
 
-/// Temporary landing screen for Module 1. Replaced by the real Home /
-/// dashboard in Module 9.
+/// Temporary landing screen — now a design-system PROOF for Module 5: it renders
+/// the new primitives (AppText, AppCard, AppButton, StatusPill) so the theme and
+/// widgets are visibly working. Replaced by the real Home / dashboard in Module 9.
 class _PlaceholderHomeScreen extends StatelessWidget {
   const _PlaceholderHomeScreen();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.ac_unit,
-              size: 72,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Microcare',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text('AC servicing & booking — Dubai'),
-            const SizedBox(height: 24),
-            const Text(
-              'Module 2 ✓  Config & environment',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            // Proof that the build read its config. Removed once real screens land.
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.ac_unit, size: 56, color: AppColors.primary),
+              const SizedBox(height: AppSpacing.md),
+              const AppText('Microcare', variant: AppTextVariant.h1),
+              const SizedBox(height: AppSpacing.xs),
+              const AppText(
+                'AC servicing & booking — Dubai',
+                variant: AppTextVariant.body,
+                color: AppTextColor.muted,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              const SizedBox(height: AppSpacing.lg),
+              const AppText('Module 5 ✓  Design system',
+                  variant: AppTextVariant.h3),
+              const SizedBox(height: AppSpacing.md),
+
+              // Buttons sampler.
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: [
-                  const Text(
-                    'Loaded config',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    config.describe(),
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 12,
-                      height: 1.5,
-                    ),
-                  ),
+                  AppButton(label: 'Primary', onPressed: () {}),
+                  AppButton(
+                      label: 'Outline',
+                      variant: AppButtonVariant.outline,
+                      onPressed: () {}),
+                  AppButton(
+                      label: 'Ghost',
+                      variant: AppButtonVariant.ghost,
+                      onPressed: () {}),
+                  AppButton(
+                      label: 'Danger',
+                      variant: AppButtonVariant.danger,
+                      onPressed: () {}),
+                  const AppButton(label: 'Disabled'),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.md),
+
+              // Status pills sampler.
+              const Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  StatusPill(status: BookingStatus.pending),
+                  StatusPill(status: BookingStatus.confirmed),
+                  StatusPill(status: BookingStatus.completed),
+                  StatusPill(status: BookingStatus.cancelled),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Loaded config — proof the build read its config (from Module 2).
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const AppText('Loaded config',
+                        variant: AppTextVariant.bodyStrong),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      config.describe(),
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        height: 1.5,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
