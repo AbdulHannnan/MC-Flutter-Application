@@ -132,7 +132,7 @@ body with the user.
   RN `src/constants/*`, composed into `AppTheme.light` (`ThemeData`). Primitives in
   `lib/src/core/widgets/`: `AppText`, `AppButton` (5 variants × 3 sizes, loading/disabled),
   `AppCard`, `CategoryChip`, `StatusPill`. Boot screen restyled as a live proof. ✅
-- [] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
+- [x] **Module 6 — Services API + catalog data layer** — `GET /api/services` (with embedded
   `options[]`) and `GET /api/addons?serviceId={id}`; on-device category/search filtering;
   caching layer (react-query equivalent). Fabricate the single synthetic "AC Services" category. ✅
 - [ ] **Module 7 — Auth screens (MOCK)** — Login, Sign up, Forgot-password with exact fields,
