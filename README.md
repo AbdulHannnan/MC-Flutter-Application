@@ -122,10 +122,11 @@ body with the user.
   `apiClientProvider`): `{ data }` unwrap, `{ error }` / 422 `{ error, details }` parsing,
   15s timeout, timeout/network `ApiException` flags, optional Bearer header (unused for now).
   `assetUrl()` helper to absolutize `"/images/..."` paths. ✅
-- [ ] **Module 4 — Data models** — `Money` (minor units + currency), `ServiceCategory` (incl.
-  the synthetic single "AC Services" category), `ServiceOption`, `ServiceAddon`, `Service`,
-  `BookingLocation`, `TimeSlot`, `CartItem`, `Booking` — matching blueprint shapes and the
-  major↔minor money conversion.
+- [x] **Module 4 — Data models** — `Money` (minor units + currency, `fromAed` conversion +
+  `format`), `ServiceCategory` (+ synthetic `acServicesCategory`), `ServiceOption`,
+  `ServiceAddon`, `Service`, `LatLng`, `BookingLocation`, `TimeSlot`, `CartAddon`, `CartItem`,
+  `BookingStatus`, `Booking` in `lib/src/models/` (barrel `models.dart`). Domain-shape
+  `toJson`/`fromJson` for local persistence; backend→domain adapters deferred to Module 6. ✅
 - [ ] **Module 5 — Design system / theming** — colours (hex), typography, spacing, button
   styles, cards, chips, status pills — recreated from the RN `src/constants/*`. This is what
   makes it look like the prototype.
@@ -189,7 +190,8 @@ endpoint, and EAS/store deployment.
 | 1 — Project setup & structure | ✅ Done | Riverpod + dio; feature folders; lints; boots to placeholder; analyze/test/build-web all green |
 | 2 — Config & environment | ✅ Done | Typed `config` via `--dart-define-from-file`; `config/example.json` template + `config/README.md`; boot screen prints resolved config; 5 tests + analyze + build-web green |
 | 3 — HTTP client & error handling | ✅ Done | dio `ApiClient` + `apiClientProvider` in `lib/src/core/network/`; `{ data }` unwrap, `ApiException` (timeout/network flags, `{ error }`/422 parsing), 15s timeout, Bearer seam, `assetUrl()`; 14 new tests (19 total) + analyze + build-web green |
-| 4 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
+| 4 — Data models | ✅ Done | Domain models in `lib/src/models/` (barrel `models.dart`): `Money` (int fils, `fromAed`/`format` ported from `aedToMoney`/`formatMoney`), catalog (`Service`/`ServiceOption`/`ServiceAddon`/`ServiceCategory` + synthetic `acServicesCategory`), `TimeSlot`, `LatLng`/`BookingLocation`, `CartItem`/`CartAddon`, `Booking`/`BookingStatus`; domain-shape JSON round-trips. 22 new tests (41 total) + analyze + build-web green |
+| 5 → 15 | ⏳ Pending | One at a time, awaiting "next" for each |
 
 ---
 
