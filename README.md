@@ -141,7 +141,7 @@ body with the user.
 - [x] **Module 8 — Navigation & route guards** — stack-based navigator (no tabs, no drawer).
   Two route sets swapped by auth state; deep-link bounce; cold-start splash while restoring the
   session; booking-flow guards that redirect to the step owning missing draft data. ✅
-- [x] **Module 9 — Home / dashboard** — greeting, My-bookings + cart icons (cart with live
+- [] **Module 9 — Home / dashboard** — greeting, My-bookings + cart icons (cart with live
   badge), log out, tappable search pill, horizontal Categories strip ("See all"), vertical
   Popular services (top 5 by rating, client-sorted). Wired to the catalog layer. ✅
 - [ ] **Module 10 — Browse screens** — All Categories, Category Services (dynamic header =
