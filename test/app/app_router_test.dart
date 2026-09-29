@@ -15,6 +15,7 @@ import 'package:microcare/src/app/app_router.dart';
 import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/features/auth/mock_auth_api.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
+import 'package:microcare/src/features/services/screens/categories_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _app() => ProviderScope(
@@ -83,10 +84,10 @@ void main() {
     await tester.pumpWidget(_app());
     await tester.pumpAndSettle();
 
-    // "See all" pushes the (stubbed) categories route.
+    // "See all" pushes the categories route.
     await tester.tap(find.text('See all'));
     await tester.pumpAndSettle();
-    expect(find.text('Arrives in Module 10.'), findsOneWidget);
+    expect(find.byType(CategoriesScreen), findsOneWidget);
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();

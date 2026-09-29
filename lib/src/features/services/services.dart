@@ -11,7 +11,10 @@
 //              category/search filtering.
 //   Module 9 — presentational catalog UI: ServiceCard + the QueryBoundary state
 //              renderer (CategoryChip lives in core/widgets from Module 5).
-// Coming: browse & detail screens (Modules 10–11).
+//   Module 10 — browse screens (screens/): CategoriesScreen, CategoryServicesScreen,
+//              SearchScreen. Imported directly by the router (like the auth screens),
+//              not re-exported here — screens aren't part of the catalog's public API.
+// Coming: service detail screen (Module 11).
 
 export 'catalog_providers.dart'
     show

@@ -86,7 +86,7 @@ void main() {
 
     await tester.tap(find.text('Search AC services…'));
     await tester.pumpAndSettle();
-    expect(find.text('Arrives in Module 10.'), findsOneWidget); // search stub
+    expect(find.text('Search services…'), findsOneWidget); // search screen field
 
     await tester.pumpWidget(const SizedBox());
   });

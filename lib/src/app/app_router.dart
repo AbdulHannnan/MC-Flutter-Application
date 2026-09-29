@@ -27,6 +27,9 @@ import '../features/auth/auth.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
+import '../features/services/screens/categories_screen.dart';
+import '../features/services/screens/category_services_screen.dart';
+import '../features/services/screens/search_screen.dart';
 import 'app_routes.dart';
 import 'screens/home_screen.dart';
 import 'screens/placeholder_screen.dart';
@@ -77,13 +80,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.categories,
-        builder: (context, state) => const PlaceholderScreen(
-            title: 'Categories', arrivesIn: 'Module 10'),
+        builder: (context, state) => const CategoriesScreen(),
       ),
       GoRoute(
         path: AppRoutes.search,
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Search', arrivesIn: 'Module 10'),
+        builder: (context, state) => const SearchScreen(),
       ),
       GoRoute(
         path: AppRoutes.cart,
@@ -92,9 +93,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.category,
-        builder: (context, state) => PlaceholderScreen(
-          title: 'Category ${state.pathParameters['id']}',
-          arrivesIn: 'Module 10',
+        builder: (context, state) => CategoryServicesScreen(
+          categoryId: state.pathParameters['id']!,
         ),
       ),
       GoRoute(
