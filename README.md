@@ -144,7 +144,7 @@ body with the user.
 - [x] **Module 9 — Home / dashboard** — greeting, My-bookings + cart icons (cart with live
   badge), log out, tappable search pill, horizontal Categories strip ("See all"), vertical
   Popular services (top 5 by rating, client-sorted). Wired to the catalog layer. ✅
-- [] **Module 10 — Browse screens** — All Categories, Category Services (dynamic header =
+- [x] **Module 10 — Browse screens** — All Categories, Category Services (dynamic header =
   category name), Search (debounced 300ms, autofocus, filter chips, result count). Shared
   `ServiceCard`. ✅
 - [ ] **Module 11 — Service Detail (booking step 1)** — hero image, name, description,
