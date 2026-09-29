@@ -14,7 +14,9 @@
 //   Module 10 — browse screens (screens/): CategoriesScreen, CategoryServicesScreen,
 //              SearchScreen. Imported directly by the router (like the auth screens),
 //              not re-exported here — screens aren't part of the catalog's public API.
-// Coming: service detail screen (Module 11).
+//   Module 11 — ServiceDetailScreen (screens/): the service detail + start of the
+//              booking flow (the booking DRAFT store lives in features/booking/).
+//              Also imported directly by the router.
 
 export 'catalog_providers.dart'
     show

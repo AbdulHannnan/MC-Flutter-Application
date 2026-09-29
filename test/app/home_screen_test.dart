@@ -72,7 +72,7 @@ void main() {
     await tester.ensureVisible(card);
     await tester.tap(card);
     await tester.pumpAndSettle();
-    expect(find.text('Arrives in Module 11.'), findsOneWidget); // service stub
+    expect(find.text('Continue'), findsOneWidget); // service detail footer CTA
 
     await tester.pumpWidget(const SizedBox());
   });

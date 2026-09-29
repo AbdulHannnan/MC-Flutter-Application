@@ -108,6 +108,16 @@ class ServiceOption {
         'price': price.toJson(),
         'duration': duration,
       };
+
+  /// A copy with a fresh [price] — used by the booking draft's
+  /// `applyLiveUnitPrice` (pre-checkout revalidation) to swap in a live value.
+  ServiceOption copyWith({Money? price}) => ServiceOption(
+        id: id,
+        name: name,
+        description: description,
+        price: price ?? this.price,
+        duration: duration,
+      );
 }
 
 /// An optional multi-select EXTRA added on top of the chosen service/option —
@@ -238,4 +248,24 @@ class Service {
         if (ratingCount != null) 'ratingCount': ratingCount,
         'active': active,
       };
+
+  /// A copy with a fresh [basePrice] — used by the booking draft's
+  /// `applyLiveUnitPrice` (pre-checkout revalidation) when the service has no
+  /// option, so its base price is the unit price to reconcile.
+  Service copyWith({Money? basePrice}) => Service(
+        id: id,
+        categoryId: categoryId,
+        name: name,
+        slug: slug,
+        summary: summary,
+        description: description,
+        image: image,
+        basePrice: basePrice ?? this.basePrice,
+        duration: duration,
+        options: options,
+        addons: addons,
+        rating: rating,
+        ratingCount: ratingCount,
+        active: active,
+      );
 }

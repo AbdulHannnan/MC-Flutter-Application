@@ -27,9 +27,11 @@ import '../features/auth/auth.dart';
 import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
+import '../features/booking/booking.dart';
 import '../features/services/screens/categories_screen.dart';
 import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
+import '../features/services/screens/service_detail_screen.dart';
 import 'app_routes.dart';
 import 'screens/home_screen.dart';
 import 'screens/placeholder_screen.dart';
@@ -99,29 +101,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.service,
-        builder: (context, state) => PlaceholderScreen(
-          title: 'Service ${state.pathParameters['id']}',
-          arrivesIn: 'Module 11',
+        builder: (context, state) => ServiceDetailScreen(
+          serviceId: state.pathParameters['id']!,
         ),
       ),
 
-      // Booking flow — guarded: no draft yet, so each step bounces home (the
-      // pattern; the real draft check lands with the store in Modules 11–13).
+      // Booking flow — each step guards on the draft holding what it needs,
+      // redirecting to the step that owns any missing data (mirrors RN's
+      // per-screen Redirect). The Location step lands with Module 11 (a started
+      // draft); Schedule/Review screens themselves arrive in Modules 12–13.
       GoRoute(
         path: AppRoutes.bookingLocation,
-        redirect: _bookingDraftGuard,
+        redirect: (context, state) => _bookingDraftGuard(ref, state),
         builder: (context, state) =>
             const PlaceholderScreen(title: 'Location', arrivesIn: 'Module 12'),
       ),
       GoRoute(
         path: AppRoutes.bookingSchedule,
-        redirect: _bookingDraftGuard,
+        redirect: (context, state) => _bookingDraftGuard(ref, state),
         builder: (context, state) =>
             const PlaceholderScreen(title: 'Schedule', arrivesIn: 'Module 12'),
       ),
       GoRoute(
         path: AppRoutes.bookingReview,
-        redirect: _bookingDraftGuard,
+        redirect: (context, state) => _bookingDraftGuard(ref, state),
         builder: (context, state) => const PlaceholderScreen(
             title: 'Review booking', arrivesIn: 'Module 13'),
       ),
@@ -178,9 +181,25 @@ String? _authGuard(Ref ref, GoRouterState state) {
   return null;
 }
 
-/// A booking step needs its draft data; with no draft store yet, bounce home.
-String? _bookingDraftGuard(BuildContext context, GoRouterState state) {
-  // TODO(Modules 11–13): allow when the draft holds what this step needs (e.g. a
-  // chosen service for /booking/location), mirroring RN's per-screen Redirect.
-  return AppRoutes.home;
+/// A booking step needs its draft data. Each step allows only when the draft holds
+/// what it requires, otherwise it redirects to the step that owns the missing data
+/// (mirrors RN's per-screen `if (!x) return <Redirect .../>`):
+///   • location — needs a chosen service (else Home: nothing is being booked).
+///   • schedule — needs service + location (else back to the location step).
+///   • review   — needs service + location + slot (else back to the owning step).
+String? _bookingDraftGuard(Ref ref, GoRouterState state) {
+  final draft = ref.read(bookingDraftProvider);
+  final location = state.matchedLocation;
+
+  // No service configured → nothing to book; leave the flow entirely.
+  if (!draft.hasService) return AppRoutes.home;
+
+  if (location == AppRoutes.bookingSchedule && draft.location == null) {
+    return AppRoutes.bookingLocation;
+  }
+  if (location == AppRoutes.bookingReview) {
+    if (draft.location == null) return AppRoutes.bookingLocation;
+    if (draft.slot == null) return AppRoutes.bookingSchedule;
+  }
+  return null;
 }
