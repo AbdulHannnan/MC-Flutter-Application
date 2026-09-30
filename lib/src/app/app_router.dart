@@ -29,6 +29,7 @@ import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/booking/booking.dart';
 import '../features/booking/screens/location_screen.dart';
+import '../features/booking/screens/review_screen.dart';
 import '../features/booking/screens/schedule_screen.dart';
 import '../features/cart/screens/cart_screen.dart';
 import '../features/services/screens/categories_screen.dart';
@@ -125,8 +126,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.bookingReview,
         redirect: (context, state) => _bookingDraftGuard(ref, state),
-        builder: (context, state) => const PlaceholderScreen(
-            title: 'Review booking', arrivesIn: 'Module 13'),
+        builder: (context, state) => const ReviewScreen(),
       ),
 
       GoRoute(

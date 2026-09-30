@@ -11,8 +11,12 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/format/date_time.dart';
 import '../../models/models.dart';
+import '../services/catalog_repository.dart';
+import 'availability_providers.dart';
 import 'booking_draft.dart';
+import 'booking_revalidation.dart';
 
 class BookingDraftController extends Notifier<BookingDraft> {
   @override
@@ -116,6 +120,90 @@ class BookingDraftController extends Notifier<BookingDraft> {
 
   /// Clear the draft — after a booking is added/placed, or on logout.
   void reset() => state = BookingDraft.empty;
+
+  /// Pre-payment revalidation (Module 13). Re-check the draft against the LIVE
+  /// catalog just before charging, and reconcile what safely can be:
+  ///   • service removed / inactive        → blocked.
+  ///   • chosen option no longer offered    → blocked.
+  ///   • chosen slot taken / past / gone    → blocked.
+  ///   • unit price drifted                 → auto-apply the live price + inform.
+  ///   • nothing changed                    → ok.
+  /// Mirrors RN's `revalidateDraft`. The Review screen renders the [RevalidationOutcome]
+  /// (info banner + updated total, or a blocking banner) and only proceeds on [ok].
+  Future<RevalidationOutcome> revalidate() async {
+    final draft = state;
+    final service = draft.service;
+    if (service == null) {
+      return const RevalidationOutcome.blocked('Nothing to book.');
+    }
+
+    // Fetch the live service. A 404 (or inactive) means it's gone from the catalog.
+    final Service live;
+    try {
+      live = await ref.read(catalogRepositoryProvider).getServiceById(service.id);
+    } on ServiceNotFoundError {
+      return const RevalidationOutcome.blocked(
+          'This service is no longer available. Please start a new booking.');
+    }
+    if (!live.active) {
+      return const RevalidationOutcome.blocked(
+          'This service is no longer available. Please start a new booking.');
+    }
+
+    // Resolve the live unit price: the chosen option's (must still exist), else base.
+    final Money livePrice;
+    final draftOption = draft.option;
+    if (draftOption != null) {
+      final liveOption = _optionById(live, draftOption.id);
+      if (liveOption == null) {
+        return const RevalidationOutcome.blocked(
+            'The option you chose is no longer offered. Please review your selection.');
+      }
+      livePrice = liveOption.price;
+    } else {
+      livePrice = live.basePrice;
+    }
+
+    // Is the chosen slot still open? Re-generate the day's slots (client-side, the
+    // same source the Schedule step used) and confirm ours is present + available.
+    final slot = draft.slot;
+    if (slot != null) {
+      final date = toLocalIsoDate(slot.start);
+      final liveSlots =
+          ref.read(availabilityRepositoryProvider).buildSlots(date);
+      final liveSlot = _slotById(liveSlots, slot.id);
+      if (liveSlot == null || !liveSlot.isAvailable) {
+        return const RevalidationOutcome.blocked(
+            'That time slot is no longer available. Please pick another time.');
+      }
+    }
+
+    // Price drift → auto-apply the live price and tell the user (they re-confirm).
+    final current = draft.unitPrice;
+    if (current != null && current != livePrice) {
+      applyLiveUnitPrice(livePrice);
+      return RevalidationOutcome.priceUpdated(
+        'The price changed from ${current.format()} to ${livePrice.format()}. '
+        "We've updated your total — please review and confirm.",
+      );
+    }
+
+    return const RevalidationOutcome.ok();
+  }
+
+  static ServiceOption? _optionById(Service service, String id) {
+    for (final o in service.options) {
+      if (o.id == id) return o;
+    }
+    return null;
+  }
+
+  static TimeSlot? _slotById(List<TimeSlot> slots, String id) {
+    for (final s in slots) {
+      if (s.id == id) return s;
+    }
+    return null;
+  }
 }
 
 /// The in-memory booking draft. Read the whole draft, or a `.select`ed field, and

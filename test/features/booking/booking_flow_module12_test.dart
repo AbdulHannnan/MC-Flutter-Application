@@ -143,10 +143,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(_draft(tester).slot?.id, 'slot_2030-06-15_11');
 
-    // Continue advances to the (still-stubbed) Review step.
+    // Continue advances to the Review step (Module 13).
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
-    // The Review placeholder renders its title in both the AppBar and the body.
-    expect(find.text('Review booking'), findsWidgets);
+    // The Review screen's read-back renders its sections + the pay CTAs.
+    expect(find.text('Review'), findsOneWidget); // AppBar title
+    expect(find.text('When'), findsOneWidget);
+    expect(find.text('Pay now'), findsOneWidget);
   });
 }

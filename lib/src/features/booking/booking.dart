@@ -11,11 +11,15 @@
 //               the client-side availability source ([daySlotsProvider]) and its
 //               Calendar + TimeSlots pickers. (Screens are imported directly by the
 //               router, like the catalog screens — not part of this barrel.)
-// Coming: Review + cart (Module 13).
+//   Module 13 — Review: the pre-payment revalidation ([BookingDraftController.revalidate]
+//               + [RevalidationOutcome]) that reconciles the draft against the live
+//               catalog before checkout. (The Review screen is imported directly by
+//               the router; the cart lives in features/cart.)
 
 export 'availability_providers.dart'
     show availabilityRepositoryProvider, daySlotsProvider, kAvailabilityStaleTime;
 export 'availability_repository.dart' show AvailabilityRepository;
 export 'booking_controller.dart' show BookingDraftController, bookingDraftProvider;
 export 'booking_draft.dart' show BookingDraft;
+export 'booking_revalidation.dart' show RevalidationOutcome, RevalidationKind;
 export 'data/dubai_areas.dart' show DubaiArea, kDubaiAreas;
