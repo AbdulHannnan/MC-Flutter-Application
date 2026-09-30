@@ -162,7 +162,7 @@ body with the user.
   `GET /api/services` (slot open? service active? price drift → info banner + auto-apply;
   taken/removed → blocking banner). Cart: line cards (qty stepper, remove, line total), empty
   state, clear all, subtotal, Checkout. Cart persists locally.
-- [ ] **Module 14 — Checkout + Payment (MOCK) + Success/Failure** — Checkout: order summary,
+- [x] **Module 14 — Checkout + Payment (MOCK) + Success/Failure** — Checkout: order summary,
   Phone (required) + Email (prefilled, validated), "Pay {amount}"; empty-cart guard. Payment is
   MOCK behind a seam for the real N-Genius package. On mock success → submit each cart line via
   `POST /api/bookings/draft` with `source:"app"` (sequentially, awaited), fire local
