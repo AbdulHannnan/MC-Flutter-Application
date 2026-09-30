@@ -31,7 +31,11 @@ import '../features/booking/booking.dart';
 import '../features/booking/screens/location_screen.dart';
 import '../features/booking/screens/review_screen.dart';
 import '../features/booking/screens/schedule_screen.dart';
+import '../features/cart/cart.dart';
 import '../features/cart/screens/cart_screen.dart';
+import '../features/checkout/screens/checkout_failure_screen.dart';
+import '../features/checkout/screens/checkout_screen.dart';
+import '../features/checkout/screens/checkout_success_screen.dart';
 import '../features/services/screens/categories_screen.dart';
 import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
@@ -131,18 +135,20 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: AppRoutes.checkout,
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Checkout', arrivesIn: 'Module 14'),
+        // Nothing to pay for → send an empty cart back to the cart screen.
+        redirect: (context, state) {
+          final empty = ref.read(cartProvider).isEmpty;
+          return empty ? AppRoutes.cart : null;
+        },
+        builder: (context, state) => const CheckoutScreen(),
       ),
       GoRoute(
         path: AppRoutes.checkoutSuccess,
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Confirmed', arrivesIn: 'Module 14'),
+        builder: (context, state) => const CheckoutSuccessScreen(),
       ),
       GoRoute(
         path: AppRoutes.checkoutFailure,
-        builder: (context, state) => const PlaceholderScreen(
-            title: 'Payment failed', arrivesIn: 'Module 14'),
+        builder: (context, state) => const CheckoutFailureScreen(),
       ),
       GoRoute(
         path: AppRoutes.orders,

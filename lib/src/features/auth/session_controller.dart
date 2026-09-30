@@ -23,6 +23,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../cart/cart.dart';
+import '../orders/orders_repository.dart';
 import 'auth_user.dart';
 import 'mock_auth_api.dart';
 
@@ -80,11 +81,13 @@ class SessionController extends AsyncNotifier<AuthUser?> {
     return user;
   }
 
-  /// End the session (users are kept). The cart is the previous user's, so it's
-  /// cleared here (Module 13); routing follows the state change (Module 8).
+  /// End the session (users are kept). The cart (Module 13) and local order
+  /// history (Module 14) belong to the previous user, so both are cleared here;
+  /// routing follows the state change (Module 8).
   Future<void> signOut() async {
     await _api.signOut();
     ref.read(cartProvider.notifier).clear();
+    await ref.read(ordersRepositoryProvider).clear();
     state = const AsyncData(null);
   }
 }
