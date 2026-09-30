@@ -147,7 +147,7 @@ body with the user.
 - [x] **Module 10 — Browse screens** — All Categories, Category Services (dynamic header =
   category name), Search (debounced 300ms, autofocus, filter chips, result count). Shared
   `ServiceCard`. ✅
-- [] **Module 11 — Service Detail (booking step 1)** — hero image, name, description,
+- [x] **Module 11 — Service Detail (booking step 1)** — hero image, name, description,
   single-select option radios (only if options exist), multi-select add-on checkboxes (only if
   add-ons exist), pinned footer running total + Continue. Edit-mode pre-seeding from Review.
   Starts/updates the booking draft. Fetches that service's add-ons. ✅
