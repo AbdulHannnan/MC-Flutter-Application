@@ -151,7 +151,7 @@ body with the user.
   single-select option radios (only if options exist), multi-select add-on checkboxes (only if
   add-ons exist), pinned footer running total + Continue. Edit-mode pre-seeding from Review.
   Starts/updates the booking draft. Fetches that service's add-ons. ✅
-- [x] **Module 12 — Booking Location & Schedule (steps 2–3)** — Location: heading, MOCK map
+- [] **Module 12 — Booking Location & Schedule (steps 2–3)** — Location: heading, MOCK map
   panel (styled box + 📍), "use my current location" (mock), address field, 12 Dubai-area preset
   chips; Continue disabled until address/area/pin set. Schedule: custom month calendar (past
   days disabled), client-generated hourly slots 09:00–16:00 (taken/past struck-through), summary
