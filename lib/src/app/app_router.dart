@@ -30,6 +30,7 @@ import '../features/auth/screens/sign_up_screen.dart';
 import '../features/booking/booking.dart';
 import '../features/booking/screens/location_screen.dart';
 import '../features/booking/screens/schedule_screen.dart';
+import '../features/cart/screens/cart_screen.dart';
 import '../features/services/screens/categories_screen.dart';
 import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
@@ -92,8 +93,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.cart,
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Your cart', arrivesIn: 'Module 13'),
+        builder: (context, state) => const CartScreen(),
       ),
       GoRoute(
         path: AppRoutes.category,

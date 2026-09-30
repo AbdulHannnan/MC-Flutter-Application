@@ -22,6 +22,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../cart/cart.dart';
 import 'auth_user.dart';
 import 'mock_auth_api.dart';
 
@@ -79,10 +80,11 @@ class SessionController extends AsyncNotifier<AuthUser?> {
     return user;
   }
 
-  /// End the session (users are kept). Cart clearing will hook in here in
-  /// Module 13; routing follows the state change (Module 8).
+  /// End the session (users are kept). The cart is the previous user's, so it's
+  /// cleared here (Module 13); routing follows the state change (Module 8).
   Future<void> signOut() async {
     await _api.signOut();
+    ref.read(cartProvider.notifier).clear();
     state = const AsyncData(null);
   }
 }

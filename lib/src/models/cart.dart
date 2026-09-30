@@ -98,6 +98,16 @@ class CartItem {
     this.notes,
   });
 
+  /// The per-unit price INCLUDING the selected add-ons: base unit price + every
+  /// add-on's price (same currency). The price of one of this line. Mirrors the
+  /// RN cart's `selectLineUnitPrice` and matches [BookingDraft.subtotal].
+  Money get lineUnitPrice =>
+      addons.fold<Money>(unitPrice, (sum, a) => sum + a.price);
+
+  /// The line total: the add-on-inclusive unit price × quantity. What this line
+  /// contributes to the cart subtotal. Mirrors RN `selectLineTotal`.
+  Money get lineTotal => lineUnitPrice * quantity;
+
   CartItem copyWith({
     int? quantity,
     List<CartAddon>? addons,

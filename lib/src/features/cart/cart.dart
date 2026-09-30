@@ -1,14 +1,13 @@
 // lib/src/features/cart — the cart feature's PUBLIC API (barrel).
 //
-// STUB for now: Module 9's Home shows a cart icon with a live count badge, but the
-// real persisted cart store lands in Module 13. Until then [cartCountProvider]
-// returns 0 (so the badge is hidden). Module 13 repoints this at the cart store's
-// count selector — the Home never changes, only the provider's body.
+// Module 13 replaces Module 9's stub (a `cartCountProvider` that always returned
+// 0) with the real, locally-persisted cart store. Other features import the cart
+// ONLY from here:
+//   - the store + mutations (CartController / cartProvider),
+//   - the derived reads the UI watches (cartCountProvider for the Home badge,
+//     cartSubtotalProvider for the cart/checkout totals).
+// The persistence seam (CartStorage) stays private to the feature; the Cart
+// screen is imported directly by the router, like the other feature screens.
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// Total number of items across all cart lines — drives the Home cart badge.
-///
-/// TODO(Module 13): replace the stub body with a selector over the real persisted
-/// cart store (Σ line quantities).
-final cartCountProvider = Provider<int>((ref) => 0);
+export 'cart_controller.dart'
+    show CartController, cartProvider, cartCountProvider, cartSubtotalProvider;
