@@ -100,8 +100,9 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pumpAndSettle();
 
-    // Draft-guard allowed the Location step (a service is now configured).
-    expect(find.text('Arrives in Module 12.'), findsOneWidget);
+    // Draft-guard allowed the Location step (a service is now configured), and it
+    // now renders the real Location screen (Module 12).
+    expect(find.text('Where should we come?'), findsOneWidget);
 
     // The draft holds the started service + chosen option.
     final draft = _containerOf(tester).read(bookingDraftProvider);

@@ -28,6 +28,8 @@ import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/sign_up_screen.dart';
 import '../features/booking/booking.dart';
+import '../features/booking/screens/location_screen.dart';
+import '../features/booking/screens/schedule_screen.dart';
 import '../features/services/screens/categories_screen.dart';
 import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
@@ -108,19 +110,17 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Booking flow — each step guards on the draft holding what it needs,
       // redirecting to the step that owns any missing data (mirrors RN's
-      // per-screen Redirect). The Location step lands with Module 11 (a started
-      // draft); Schedule/Review screens themselves arrive in Modules 12–13.
+      // per-screen Redirect). Location + Schedule land with Module 12; the Review
+      // screen itself arrives in Module 13.
       GoRoute(
         path: AppRoutes.bookingLocation,
         redirect: (context, state) => _bookingDraftGuard(ref, state),
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Location', arrivesIn: 'Module 12'),
+        builder: (context, state) => const LocationScreen(),
       ),
       GoRoute(
         path: AppRoutes.bookingSchedule,
         redirect: (context, state) => _bookingDraftGuard(ref, state),
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Schedule', arrivesIn: 'Module 12'),
+        builder: (context, state) => const ScheduleScreen(),
       ),
       GoRoute(
         path: AppRoutes.bookingReview,
