@@ -156,7 +156,7 @@ body with the user.
   chips; Continue disabled until address/area/pin set. Schedule: custom month calendar (past
   days disabled), client-generated hourly slots 09:00–16:00 (taken/past struck-through), summary
   + Continue. Both guard on draft presence.
-- [ ] **Module 13 — Review + Cart (step 4 + cart)** — Review: read-back of Service/Where/When
+- [x] **Module 13 — Review + Cart (step 4 + cart)** — Review: read-back of Service/Where/When
   each with an Edit link that pops to the owning step (restoring state), editable notes, footer
   total, "Add to cart" (outline) + "Pay now" (primary). Pre-payment revalidation against
   `GET /api/services` (slot open? service active? price drift → info banner + auto-apply;
