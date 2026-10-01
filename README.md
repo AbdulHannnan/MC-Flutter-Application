@@ -169,7 +169,7 @@ body with the user.
   notifications, clear cart+draft → Success screen (references, amount, txn ref, no back button).
   On failure → Failure screen (reason, "cart still saved", Try again / Back to cart).
   **⚠️ Re-confirm the exact POST body with the user before starting this module.**
-- [ ] **Module 15 — Orders + Booking Detail (MOCK) + final polish & verify** — My Bookings list
+- [x] **Module 15 — Orders + Booking Detail (MOCK) + final polish & verify** — My Bookings list
   (local storage, newest first, empty state) and Booking Detail / digital receipt (schedule,
   location, service lines, notes, payment). Final pass: remaining visuals, loading/empty/error
   states everywhere, and VERIFY end-to-end that a Flutter booking lands in `micocare.booking` as
