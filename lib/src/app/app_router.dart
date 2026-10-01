@@ -36,6 +36,8 @@ import '../features/cart/screens/cart_screen.dart';
 import '../features/checkout/screens/checkout_failure_screen.dart';
 import '../features/checkout/screens/checkout_screen.dart';
 import '../features/checkout/screens/checkout_success_screen.dart';
+import '../features/orders/screens/order_detail_screen.dart';
+import '../features/orders/screens/orders_screen.dart';
 import '../features/services/screens/categories_screen.dart';
 import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
@@ -152,15 +154,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.orders,
-        builder: (context, state) => const PlaceholderScreen(
-            title: 'My bookings', arrivesIn: 'Module 15'),
+        builder: (context, state) => const OrdersScreen(),
       ),
       GoRoute(
         path: AppRoutes.order,
-        builder: (context, state) => PlaceholderScreen(
-          title: 'Booking ${state.pathParameters['id']}',
-          arrivesIn: 'Module 15',
-        ),
+        builder: (context, state) =>
+            OrderDetailScreen(bookingId: state.pathParameters['id']!),
       ),
     ],
   );
