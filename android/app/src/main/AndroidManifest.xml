@@ -2,7 +2,16 @@
     <application
         android:label="microcare"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"><!--
+            Security: the app keeps auth (mock users + session), the cart and the
+            local order history (customer name/phone/email) in shared_preferences.
+            Opt OUT of Android backup so that sensitive local data can't be pulled
+            via `adb backup`, cloud auto-backup or device-to-device transfer.
+            `allowBackup`/`fullBackupContent` cover Android ≤11; the referenced
+            data_extraction_rules covers Android 12+ (both backup and D2D). -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

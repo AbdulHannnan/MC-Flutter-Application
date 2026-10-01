@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Security hardening (Android 12+ / API 31+): opt the app out of having its
+  local data extracted. The app stores auth (mock users + session), the cart
+  and the local order history (customer name/phone/email) in shared_preferences,
+  none of which should leave the device. We exclude every storage domain from
+  BOTH cloud backup and device-to-device transfer, so this data can't be pulled
+  off the device through either path. (Android <=11 is covered by
+  android:allowBackup="false" + android:fullBackupContent="false".)
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
