@@ -109,3 +109,21 @@ final serviceProvider = FutureProvider.autoDispose.family<Service, String>(
   },
   retry: serviceRetryPolicy,
 );
+
+/// How many services the Home "Popular" strip shows.
+const int kPopularServicesLimit = 5;
+
+/// The highest-rated services for the Home "Popular" strip: top
+/// [kPopularServicesLimit] by rating, highest first. DERIVED from
+/// [servicesProvider] and memoised here, so the sort runs once per catalog change
+/// instead of on every Home rebuild (e.g. when the cart badge updates). Shares the
+/// upstream's cache + error, and `ref.invalidate(servicesProvider(ServiceQuery.all))`
+/// cascades to refresh it.
+final popularServicesProvider = FutureProvider.autoDispose<List<Service>>(
+  (ref) async {
+    final services = await ref.watch(servicesProvider(ServiceQuery.all).future);
+    final sorted = [...services]
+      ..sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
+    return sorted.take(kPopularServicesLimit).toList();
+  },
+);

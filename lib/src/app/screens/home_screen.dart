@@ -28,8 +28,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(sessionProvider).user;
     final categories = ref.watch(categoriesProvider);
-    final services = ref.watch(servicesProvider(ServiceQuery.all));
-    final cartCount = ref.watch(cartCountProvider);
+    final popular = ref.watch(popularServicesProvider);
 
     // Prefer a first name; fall back to the full name, then a friendly default.
     final greetingName = user?.firstName ?? user?.fullName ?? 'there';
@@ -59,7 +58,7 @@ class HomeScreen extends ConsumerWidget {
                         color: AppColors.text,
                         tooltip: 'My bookings',
                       ),
-                      _CartButton(count: cartCount),
+                      const _CartButton(),
                       TextButton(
                         onPressed: () =>
                             ref.read(sessionProvider.notifier).signOut(),
@@ -113,32 +112,27 @@ class HomeScreen extends ConsumerWidget {
             _Section(
               title: 'Popular services',
               child: QueryBoundary<Service>(
-                query: services,
+                query: popular,
                 emptyLabel: 'No services yet.',
                 onRetry: () =>
                     ref.invalidate(servicesProvider(ServiceQuery.all)),
-                builder: (list) {
-                  final popular = [...list]
-                    ..sort((a, b) => (b.rating ?? 0).compareTo(a.rating ?? 0));
-                  final top = popular.take(5).toList();
-                  return Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                    child: Column(
-                      children: [
-                        for (final service in top) ...[
-                          ServiceCard(
-                            service: service,
-                            onTap: () =>
-                                context.push(AppRoutes.serviceOf(service.id)),
-                          ),
-                          if (service != top.last)
-                            const SizedBox(height: AppSpacing.md),
-                        ],
+                builder: (top) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Column(
+                    children: [
+                      for (final service in top) ...[
+                        ServiceCard(
+                          service: service,
+                          onTap: () =>
+                              context.push(AppRoutes.serviceOf(service.id)),
+                        ),
+                        if (service != top.last)
+                          const SizedBox(height: AppSpacing.md),
                       ],
-                    ),
-                  );
-                },
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -229,13 +223,15 @@ class _SearchPill extends StatelessWidget {
   }
 }
 
-/// The cart shortcut with a live count badge (hidden when empty).
-class _CartButton extends StatelessWidget {
-  final int count;
-  const _CartButton({required this.count});
+/// The cart shortcut with a live count badge (hidden when empty). Watches
+/// [cartCountProvider] itself so a cart change rebuilds ONLY this badge, not the
+/// whole Home screen (which would otherwise re-run the catalog section trees).
+class _CartButton extends ConsumerWidget {
+  const _CartButton();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(cartCountProvider);
     return Stack(
       clipBehavior: Clip.none,
       children: [

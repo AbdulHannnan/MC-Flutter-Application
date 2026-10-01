@@ -24,6 +24,8 @@ export 'catalog_providers.dart'
         categoryProvider,
         servicesProvider,
         serviceProvider,
+        popularServicesProvider,
+        kPopularServicesLimit,
         kCatalogStaleTime,
         kCatalogRetries,
         catalogRetryPolicy,

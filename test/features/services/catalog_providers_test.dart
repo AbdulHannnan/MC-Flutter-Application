@@ -102,4 +102,39 @@ void main() {
       expect(repo.getServicesCalls, 2);
     });
   });
+
+  group('popularServicesProvider', () {
+    // A real mock-seed repository so the sort runs over real catalog data.
+    CatalogRepository seedRepo() => CatalogRepository(
+          ApiClient(baseUrl: 'http://localhost:5050'),
+          useMock: true,
+          mockLatency: Duration.zero,
+        );
+
+    test('returns the top N by rating, highest first', () async {
+      final container = _containerWith(seedRepo());
+
+      final popular =
+          await container.read(popularServicesProvider.future);
+
+      expect(popular, hasLength(kPopularServicesLimit));
+      // Highest-rated seed service leads.
+      expect(popular.first.name, 'Annual Maintenance Contract');
+      // Monotonically non-increasing by rating.
+      for (var i = 1; i < popular.length; i++) {
+        expect((popular[i - 1].rating ?? 0) >= (popular[i].rating ?? 0), isTrue);
+      }
+    });
+
+    test('derives from a single upstream services fetch', () async {
+      final repo = _FakeRepo();
+      final container = _containerWith(repo);
+
+      await container.read(popularServicesProvider.future);
+      // Reading the underlying query again hits the shared cache, not the repo.
+      await container.read(servicesProvider(ServiceQuery.all).future);
+
+      expect(repo.getServicesCalls, 1);
+    });
+  });
 }
