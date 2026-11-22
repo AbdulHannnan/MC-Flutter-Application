@@ -27,6 +27,7 @@ CartItem _item({int quantity = 1, int unit = 5000}) => CartItem(
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
+        signedOutTechnician,
     mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
   ],
   child: const MicrocareApp(),

@@ -38,6 +38,7 @@ CartItem _line() => CartItem(
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
+        signedOutTechnician,
     mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
     paymentApiProvider.overrideWithValue(
       MockPaymentApi(latency: Duration.zero),

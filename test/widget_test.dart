@@ -15,7 +15,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [skipWelcomeSplash],
+        overrides: [skipWelcomeSplash, signedOutTechnician],
         child: const MicrocareApp(),
       ),
     );

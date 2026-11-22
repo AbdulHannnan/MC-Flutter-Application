@@ -23,6 +23,7 @@ import '../support/welcome_gate.dart';
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
+        signedOutTechnician,
     mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
     catalogRepositoryProvider.overrideWithValue(
       CatalogRepository(

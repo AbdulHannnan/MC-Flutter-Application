@@ -13,22 +13,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/widgets.dart';
-import '../../auth/auth.dart';
+import '../technician_session.dart';
 
 class TechnicianHomeScreen extends ConsumerWidget {
   const TechnicianHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(sessionProvider).user;
-    final greetingName = user?.firstName ?? user?.fullName ?? 'there';
+    final technician = ref.watch(technicianSessionProvider).technician;
+    final greetingName = technician?.firstName ?? 'there';
 
     return Scaffold(
       appBar: AppBar(
         title: const AppText('Technician', variant: AppTextVariant.subheading),
         actions: [
           TextButton(
-            onPressed: () => ref.read(sessionProvider.notifier).signOut(),
+            onPressed: () =>
+                ref.read(technicianSessionProvider.notifier).logout(),
             child: const AppText('Log out',
                 variant: AppTextVariant.caption, color: AppTextColor.primary),
           ),

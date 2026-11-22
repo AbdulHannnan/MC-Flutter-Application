@@ -44,6 +44,12 @@ dependencies:
   # idiomatic Flutter analog of the RN app's expo-router file-based routes +
   # Stack.Protected groups.
   go_router: ^18.0.1
+  # Secure, OS-backed storage (iOS Keychain / Android Keystore) for the TECHNICIAN
+  # JWT — never a plain file or log (unlike the dev-only mock customer auth, which
+  # uses shared_preferences). The token is sent as a Bearer header on every
+  # technician request. v11+ ships Swift Package Manager support, so it integrates
+  # in this CocoaPods-free iOS setup (unlike 9.x, which was podspec-only).
+  flutter_secure_storage: ^11.2.0
 
 dev_dependencies:
   flutter_test:

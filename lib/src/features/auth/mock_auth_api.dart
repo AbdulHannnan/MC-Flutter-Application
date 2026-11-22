@@ -23,13 +23,6 @@ import 'auth_user.dart';
 const String _usersKey = 'microcare-mock-users';
 const String _sessionKey = 'microcare-mock-session';
 
-/// A built-in TECHNICIAN account so the staff (job) experience can be signed into
-/// without a self-signup path (technicians are provisioned, not self-registered).
-/// Seeded once by [MockAuthApi.ensureSeeded]. Dev-only, like the rest of this mock.
-const String kDemoTechnicianEmail = 'tech@microcare.ae';
-const String kDemoTechnicianPassword = 'tech12345';
-const String kDemoTechnicianName = 'Sami Technician';
-
 /// Fake network delay so loading spinners are visible in development. Overridable
 /// (set to [Duration.zero] in tests).
 const Duration kMockAuthLatency = Duration(milliseconds: 400);
@@ -117,25 +110,6 @@ class MockAuthApi {
     await _writeUsers([...users, _StoredUser(user, password)]);
     await (await _prefs).setString(_sessionKey, user.id);
     return user;
-  }
-
-  /// Ensure built-in seed accounts exist (currently the demo [technician]). Called
-  /// once on cold start (see SessionController) BEFORE restoring the session, so the
-  /// staff login always works. Idempotent: it never duplicates or overwrites, and
-  /// it does NOT touch the active session.
-  Future<void> ensureSeeded() async {
-    final users = await _readUsers();
-    final hasTech = users.any(
-      (u) => u.user.email?.toLowerCase() == kDemoTechnicianEmail,
-    );
-    if (hasTech) return;
-
-    final tech = _buildUser(
-      email: kDemoTechnicianEmail,
-      fullName: kDemoTechnicianName,
-      role: UserRole.technician,
-    );
-    await _writeUsers([...users, _StoredUser(tech, kDemoTechnicianPassword)]);
   }
 
   /// Sign in with email + password. Throws a single generic error on any mismatch.

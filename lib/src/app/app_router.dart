@@ -43,6 +43,8 @@ import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
 import '../features/services/screens/service_detail_screen.dart';
 import '../features/technician/screens/technician_home_screen.dart';
+import '../features/technician/screens/technician_login_screen.dart';
+import '../features/technician/technician.dart';
 import 'app_routes.dart';
 import 'screens/home_screen.dart';
 import 'screens/placeholder_screen.dart';
@@ -56,6 +58,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   ref.listen(sessionProvider, (_, _) => refresh.value++);
+  // The technician session is a parallel auth (real backend JWT); re-evaluate the
+  // guard when it changes too (technician log in / out).
+  ref.listen(technicianSessionProvider, (_, _) => refresh.value++);
   // Also re-evaluate when the cold-start welcome animation finishes, so the
   // guard can release the splash once it has played (see _authGuard).
   ref.listen(splashGateProvider, (_, _) => refresh.value++);
@@ -82,6 +87,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      // Technician login — a parallel public entry (reachable when nobody is
+      // signed in); on success the technician session reveals the staff area.
+      GoRoute(
+        path: AppRoutes.technicianLogin,
+        builder: (context, state) => const TechnicianLoginScreen(),
       ),
 
       // ── Protected area (reachable only when signed IN) ──
@@ -176,41 +187,45 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 /// The auth boundary. Returns a path to redirect to, or null to allow the route.
+///
+/// Two PARALLEL auths: the customer session (mock/Clerk) and the technician
+/// session (real backend JWT). A signed-in technician takes precedence and gets
+/// only the staff area; a signed-in customer gets the customer app; the two
+/// experiences never overlap. Nobody signed in → the public auth routes.
 String? _authGuard(Ref ref, GoRouterState state) {
   final session = ref.read(sessionProvider);
+  final techSession = ref.read(technicianSessionProvider);
   final welcomePlayed = ref.read(splashGateProvider);
   final location = state.matchedLocation;
   final onSplash = location == AppRoutes.splash;
 
-  // Hold on the splash until BOTH the saved session has restored AND the
-  // cold-start welcome animation has finished playing, so the branded welcome
-  // always shows in full on app open instead of flashing past.
-  if (session.isRestoring || !welcomePlayed) {
+  // Hold on the splash until BOTH sessions have restored AND the cold-start
+  // welcome animation has finished playing, so the branded welcome always shows
+  // in full on app open instead of flashing past.
+  if (session.isRestoring || techSession.isRestoring || !welcomePlayed) {
     return onSplash ? null : AppRoutes.splash;
   }
 
   final onAuthRoute = AppRoutes.authRoutes.contains(location);
-
-  if (!session.isSignedIn) {
-    // Signed out: only auth routes are reachable; everything else bounces to login.
-    return onAuthRoute ? null : AppRoutes.signIn;
-  }
-
-  // Signed in. Which app the account gets depends on its ROLE (never chosen at
-  // login — it's a property of the account). The two experiences don't overlap:
   final onTechnicianRoute = AppRoutes.technicianRoutes.contains(location);
 
-  if (session.user?.isTechnician ?? false) {
-    // Technician: only the staff area is reachable. Auth routes, the splash, and
-    // the whole customer app (services/booking/cart/…) bounce to the tech home.
+  // Technician signed in → only the staff area is reachable (auth routes, the
+  // splash, and the whole customer app bounce to the tech home).
+  if (techSession.isSignedIn) {
     return onTechnicianRoute ? null : AppRoutes.technicianHome;
   }
 
-  // Customer: the staff area is off-limits; auth routes and the finished splash
+  // Customer signed in → the customer app; the staff area and auth routes/splash
   // bounce to Home.
-  if (onTechnicianRoute) return AppRoutes.home;
-  if (onAuthRoute || onSplash) return AppRoutes.home;
-  return null;
+  if (session.isSignedIn) {
+    if (onTechnicianRoute) return AppRoutes.home;
+    if (onAuthRoute || onSplash) return AppRoutes.home;
+    return null;
+  }
+
+  // Nobody signed in: only the public auth routes are reachable; everything else
+  // bounces to the customer login.
+  return onAuthRoute ? null : AppRoutes.signIn;
 }
 
 /// A booking step needs its draft data. Each step allows only when the draft holds

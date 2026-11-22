@@ -55,6 +55,7 @@ Booking _booking(String userId) => Booking(
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
+        signedOutTechnician,
     mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
   ],
   child: const MicrocareApp(),

@@ -22,6 +22,7 @@ void main() {
       ProviderScope(
         overrides: [
           skipWelcomeSplash,
+        signedOutTechnician,
           mockAuthApiProvider.overrideWithValue(
             MockAuthApi(latency: Duration.zero),
           ),

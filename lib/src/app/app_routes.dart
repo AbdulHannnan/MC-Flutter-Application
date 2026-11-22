@@ -19,14 +19,16 @@ class AppRoutes {
   static const String home = '/';
   static const String about = '/about';
 
-  // ── Technician area (reachable only by a signed-in TECHNICIAN account) ──
+  // ── Technician area (real backend JWT auth — separate from customers) ──
   // Staff get their own experience; the customer app (services/booking/cart/…) is
   // off-limits to them, and this area is off-limits to customers. See the router's
   // role-aware guard.
+  static const String technicianLogin = '/technician/login';
   static const String technicianHome = '/technician';
 
-  /// The technician-only route paths, as a set — used by the guard to keep
-  /// customers out and route technicians in.
+  /// The technician-only route paths (require a signed-in technician), as a set —
+  /// used by the guard to keep customers out and route technicians in. NOTE:
+  /// [technicianLogin] is NOT here — it's a public auth route (see [authRoutes]).
   static const Set<String> technicianRoutes = {technicianHome};
   static const String categories = '/categories';
   static const String search = '/search';
@@ -55,6 +57,12 @@ class AppRoutes {
   static const String order = '/orders/:id';
   static String orderOf(String id) => '/orders/$id';
 
-  /// The auth routes, as a set — used by the guard to tell auth from protected.
-  static const Set<String> authRoutes = {signIn, signUp, forgotPassword};
+  /// The public auth routes, as a set — reachable only when NOBODY is signed in
+  /// (customer or technician). Includes the technician login as a parallel entry.
+  static const Set<String> authRoutes = {
+    signIn,
+    signUp,
+    forgotPassword,
+    technicianLogin,
+  };
 }

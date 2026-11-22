@@ -136,6 +136,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             AuthLink('Sign up', onTap: () => context.go(AppRoutes.signUp)),
           ],
         ),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          alignment: WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const AppText('Are you a technician? ', color: AppTextColor.muted),
+            AuthLink('Technician login',
+                onTap: () => context.go(AppRoutes.technicianLogin)),
+          ],
+        ),
       ],
     );
   }

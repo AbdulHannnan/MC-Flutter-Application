@@ -61,6 +61,7 @@ TimeSlot _pastSlot() => _avail.buildSlots('2000-01-01').first;
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
+        signedOutTechnician,
     mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
     catalogRepositoryProvider.overrideWithValue(
       CatalogRepository(

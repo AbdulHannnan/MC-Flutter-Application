@@ -36,10 +36,6 @@ class SessionController extends AsyncNotifier<AuthUser?> {
   @override
   FutureOr<AuthUser?> build() async {
     try {
-      // Make sure the built-in seed accounts (the demo technician) exist before
-      // we restore, so the staff login always works. Idempotent + never touches
-      // the active session.
-      await _api.ensureSeeded();
       return await _api.getCurrentUser();
     } catch (_) {
       return null;
