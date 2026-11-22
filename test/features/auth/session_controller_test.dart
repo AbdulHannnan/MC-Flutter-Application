@@ -10,8 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 ProviderContainer _container() {
   final container = ProviderContainer(
     overrides: [
-      mockAuthApiProvider
-          .overrideWithValue(MockAuthApi(latency: Duration.zero)),
+      mockAuthApiProvider.overrideWithValue(
+        MockAuthApi(latency: Duration.zero),
+      ),
     ],
   );
   addTearDown(container.dispose);
@@ -35,7 +36,9 @@ void main() {
     final container = _container();
     await container.read(sessionProvider.future); // finish restore
 
-    await container.read(sessionProvider.notifier).signUp(
+    await container
+        .read(sessionProvider.notifier)
+        .signUp(
           fullName: 'Jane Doe',
           email: 'jane@example.com',
           password: 'supersecret',
@@ -52,7 +55,10 @@ void main() {
 
     final notifier = container.read(sessionProvider.notifier);
     await notifier.signUp(
-        fullName: 'Jane', email: 'jane@example.com', password: 'supersecret');
+      fullName: 'Jane',
+      email: 'jane@example.com',
+      password: 'supersecret',
+    );
     await notifier.signOut();
     expect(container.read(sessionProvider).isSignedIn, isFalse);
 
@@ -60,18 +66,19 @@ void main() {
     expect(container.read(sessionProvider).isSignedIn, isTrue);
   });
 
-  test('a wrong-credentials signIn throws and leaves the session unchanged',
-      () async {
-    final container = _container();
-    await container.read(sessionProvider.future);
+  test(
+    'a wrong-credentials signIn throws and leaves the session unchanged',
+    () async {
+      final container = _container();
+      await container.read(sessionProvider.future);
 
-    await expectLater(
-      container.read(sessionProvider.notifier).signIn(
-            email: 'nobody@example.com',
-            password: 'whatever12',
-          ),
-      throwsA(isA<AuthError>()),
-    );
-    expect(container.read(sessionProvider).isSignedIn, isFalse);
-  });
+      await expectLater(
+        container
+            .read(sessionProvider.notifier)
+            .signIn(email: 'nobody@example.com', password: 'whatever12'),
+        throwsA(isA<AuthError>()),
+      );
+      expect(container.read(sessionProvider).isSignedIn, isFalse);
+    },
+  );
 }

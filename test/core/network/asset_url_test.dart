@@ -16,23 +16,26 @@ void main() {
     });
 
     test('tolerates a missing leading slash', () {
-      expect(
-        assetUrl('images/ac.jpg'),
-        'http://localhost:5050/images/ac.jpg',
-      );
+      expect(assetUrl('images/ac.jpg'), 'http://localhost:5050/images/ac.jpg');
     });
 
     test('passes absolute http/https URLs through unchanged', () {
-      expect(assetUrl('https://cdn.example.com/x.jpg'),
-          'https://cdn.example.com/x.jpg');
-      expect(assetUrl('http://cdn.example.com/x.jpg'),
-          'http://cdn.example.com/x.jpg');
+      expect(
+        assetUrl('https://cdn.example.com/x.jpg'),
+        'https://cdn.example.com/x.jpg',
+      );
+      expect(
+        assetUrl('http://cdn.example.com/x.jpg'),
+        'http://cdn.example.com/x.jpg',
+      );
     });
 
     test('passes protocol-relative and data URIs through unchanged', () {
       expect(assetUrl('//cdn.example.com/x.jpg'), '//cdn.example.com/x.jpg');
-      expect(assetUrl('data:image/png;base64,AAAA'),
-          'data:image/png;base64,AAAA');
+      expect(
+        assetUrl('data:image/png;base64,AAAA'),
+        'data:image/png;base64,AAAA',
+      );
     });
 
     test('returns null for null or empty input', () {

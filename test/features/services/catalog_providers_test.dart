@@ -17,14 +17,19 @@ import 'package:microcare/src/models/models.dart';
 /// used to observe retry/dedup behaviour at the provider layer.
 class _FakeRepo extends CatalogRepository {
   _FakeRepo()
-      : super(ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true, mockLatency: Duration.zero);
+    : super(
+        ApiClient(baseUrl: 'http://localhost:5050'),
+        useMock: true,
+        mockLatency: Duration.zero,
+      );
 
   int getServicesCalls = 0;
   int getServiceByIdCalls = 0;
 
   @override
-  Future<List<Service>> getServices([ServiceQuery query = ServiceQuery.all]) async {
+  Future<List<Service>> getServices([
+    ServiceQuery query = ServiceQuery.all,
+  ]) async {
     getServicesCalls++;
     return const <Service>[];
   }
@@ -47,19 +52,23 @@ ProviderContainer _containerWith(CatalogRepository repo) {
 
 void main() {
   group('retry policies', () {
-    test('catalogRetryPolicy retries twice with exponential backoff, then stops',
-        () {
-      final err = StateError('flaky');
-      expect(catalogRetryPolicy(0, err), const Duration(milliseconds: 300));
-      expect(catalogRetryPolicy(1, err), const Duration(milliseconds: 600));
-      expect(catalogRetryPolicy(2, err), isNull); // give up after 2 retries
-    });
+    test(
+      'catalogRetryPolicy retries twice with exponential backoff, then stops',
+      () {
+        final err = StateError('flaky');
+        expect(catalogRetryPolicy(0, err), const Duration(milliseconds: 300));
+        expect(catalogRetryPolicy(1, err), const Duration(milliseconds: 600));
+        expect(catalogRetryPolicy(2, err), isNull); // give up after 2 retries
+      },
+    );
 
     test('serviceRetryPolicy never retries a ServiceNotFoundError', () {
       expect(serviceRetryPolicy(0, const ServiceNotFoundError('x')), isNull);
       // Other errors still follow the catalog policy.
-      expect(serviceRetryPolicy(0, StateError('flaky')),
-          const Duration(milliseconds: 300));
+      expect(
+        serviceRetryPolicy(0, StateError('flaky')),
+        const Duration(milliseconds: 300),
+      );
     });
   });
 
@@ -77,27 +86,30 @@ void main() {
   });
 
   group('servicesProvider (cache)', () {
-    test('de-duplicates concurrent reads of the same query into one fetch',
-        () async {
-      final repo = _FakeRepo();
-      final container = _containerWith(repo);
+    test(
+      'de-duplicates concurrent reads of the same query into one fetch',
+      () async {
+        final repo = _FakeRepo();
+        final container = _containerWith(repo);
 
-      final futures = await Future.wait([
-        container.read(servicesProvider(ServiceQuery.all).future),
-        container.read(servicesProvider(ServiceQuery.all).future),
-      ]);
+        final futures = await Future.wait([
+          container.read(servicesProvider(ServiceQuery.all).future),
+          container.read(servicesProvider(ServiceQuery.all).future),
+        ]);
 
-      expect(futures, hasLength(2));
-      expect(repo.getServicesCalls, 1); // shared cache entry
-    });
+        expect(futures, hasLength(2));
+        expect(repo.getServicesCalls, 1); // shared cache entry
+      },
+    );
 
     test('different queries are different cache entries', () async {
       final repo = _FakeRepo();
       final container = _containerWith(repo);
 
       await container.read(servicesProvider(ServiceQuery.all).future);
-      await container
-          .read(servicesProvider(ServiceQuery(search: 'clean')).future);
+      await container.read(
+        servicesProvider(ServiceQuery(search: 'clean')).future,
+      );
 
       expect(repo.getServicesCalls, 2);
     });
@@ -106,23 +118,25 @@ void main() {
   group('popularServicesProvider', () {
     // A real mock-seed repository so the sort runs over real catalog data.
     CatalogRepository seedRepo() => CatalogRepository(
-          ApiClient(baseUrl: 'http://localhost:5050'),
-          useMock: true,
-          mockLatency: Duration.zero,
-        );
+      ApiClient(baseUrl: 'http://localhost:5050'),
+      useMock: true,
+      mockLatency: Duration.zero,
+    );
 
     test('returns the top N by rating, highest first', () async {
       final container = _containerWith(seedRepo());
 
-      final popular =
-          await container.read(popularServicesProvider.future);
+      final popular = await container.read(popularServicesProvider.future);
 
       expect(popular, hasLength(kPopularServicesLimit));
       // Highest-rated seed service leads.
       expect(popular.first.name, 'Annual Maintenance Contract');
       // Monotonically non-increasing by rating.
       for (var i = 1; i < popular.length; i++) {
-        expect((popular[i - 1].rating ?? 0) >= (popular[i].rating ?? 0), isTrue);
+        expect(
+          (popular[i - 1].rating ?? 0) >= (popular[i].rating ?? 0),
+          isTrue,
+        );
       }
     });
 

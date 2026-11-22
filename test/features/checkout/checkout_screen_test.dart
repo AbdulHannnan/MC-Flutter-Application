@@ -16,34 +16,38 @@ import 'package:microcare/src/features/checkout/payment_api.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
 int _seq = 0;
 CartItem _line() => CartItem(
-      id: 'line_${_seq++}',
-      serviceId: 'svc_split_clean',
-      quantity: 1,
-      serviceName: 'Split AC Deep Cleaning',
-      unitPrice: _aed(9900),
-      location: const BookingLocation(addressText: 'Marina Gate 1'),
-      slot: const TimeSlot(
-        id: 'slot_1',
-        start: '2026-09-01T10:00:00.000',
-        end: '2026-09-01T11:00:00.000',
-      ),
-    );
+  id: 'line_${_seq++}',
+  serviceId: 'svc_split_clean',
+  quantity: 1,
+  serviceName: 'Split AC Deep Cleaning',
+  unitPrice: _aed(9900),
+  location: const BookingLocation(addressText: 'Marina Gate 1'),
+  slot: const TimeSlot(
+    id: 'slot_1',
+    start: '2026-09-01T10:00:00.000',
+    end: '2026-09-01T11:00:00.000',
+  ),
+);
 
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-        paymentApiProvider
-            .overrideWithValue(MockPaymentApi(latency: Duration.zero)),
-        bookingsApiProvider
-            .overrideWithValue(MockBookingsApi(latency: Duration.zero)),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    paymentApiProvider.overrideWithValue(
+      MockPaymentApi(latency: Duration.zero),
+    ),
+    bookingsApiProvider.overrideWithValue(
+      MockBookingsApi(latency: Duration.zero),
+    ),
+  ],
+  child: const MicrocareApp(),
+);
 
 ProviderContainer _containerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)));
@@ -55,10 +59,10 @@ String _loc(WidgetTester tester) =>
     _routerOf(tester).routerDelegate.currentConfiguration.uri.toString();
 
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 /// Sign in, seed the cart with [lines], and go to a [start] route.
 Future<ProviderContainer> _boot(
@@ -101,8 +105,9 @@ void main() {
     expect(_loc(tester), '/cart');
   });
 
-  testWidgets('Pay with no phone shows a validation error and stays',
-      (tester) async {
+  testWidgets('Pay with no phone shows a validation error and stays', (
+    tester,
+  ) async {
     await _boot(tester);
     await tester.tap(find.text('Pay 99.00 AED'));
     await tester.pumpAndSettle();
@@ -110,8 +115,9 @@ void main() {
     expect(_loc(tester), '/checkout');
   });
 
-  testWidgets('a valid pay lands on the confirmation screen with a reference',
-      (tester) async {
+  testWidgets('a valid pay lands on the confirmation screen with a reference', (
+    tester,
+  ) async {
     final container = await _boot(tester);
 
     await tester.enterText(find.byType(TextField).first, '0501234567');

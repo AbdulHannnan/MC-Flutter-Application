@@ -17,13 +17,21 @@ void main() {
 
   test('rejects a too-short / non-numeric phone', () {
     expect(validateCheckout(phone: '123', email: 'a@b.com').phone, isNotNull);
-    expect(validateCheckout(phone: 'not a phone', email: 'a@b.com').phone,
-        isNotNull);
+    expect(
+      validateCheckout(phone: 'not a phone', email: 'a@b.com').phone,
+      isNotNull,
+    );
   });
 
   test('requires and validates the email', () {
     expect(validateCheckout(phone: '0501234567', email: '').email, isNotNull);
-    expect(validateCheckout(phone: '0501234567', email: 'nope').email, isNotNull);
-    expect(validateCheckout(phone: '0501234567', email: 'a@b.com').email, isNull);
+    expect(
+      validateCheckout(phone: '0501234567', email: 'nope').email,
+      isNotNull,
+    );
+    expect(
+      validateCheckout(phone: '0501234567', email: 'a@b.com').email,
+      isNull,
+    );
   });
 }

@@ -13,57 +13,61 @@ import 'package:microcare/src/features/orders/orders_repository.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
 TimeSlot _slot() => const TimeSlot(
-      id: 'slot_1',
-      start: '2026-10-05T09:00:00.000Z',
-      end: '2026-10-05T10:00:00.000Z',
-      isAvailable: false,
-    );
+  id: 'slot_1',
+  start: '2026-10-05T09:00:00.000Z',
+  end: '2026-10-05T10:00:00.000Z',
+  isAvailable: false,
+);
 
 Booking _booking(String userId) => Booking(
-      id: 'bk_1',
-      reference: 'MC-2K4F9',
-      userId: userId,
-      status: BookingStatus.confirmed,
-      items: [
-        CartItem(
-          id: 'line_1',
-          serviceId: 's1',
-          quantity: 1,
-          serviceName: 'Split AC Deep Cleaning',
-          optionName: 'Up to 2 units',
-          unitPrice: _aed(15000),
-          addons: [CartAddon(id: 'a1', name: 'Gas top-up', price: _aed(5000))],
-        ),
-      ],
-      slot: _slot(),
-      location: const BookingLocation(
-          addressText: 'Marina Walk, Tower 1', area: 'Dubai Marina'),
-      subtotal: _aed(20000),
-      total: _aed(20000),
-      notes: 'Call on arrival',
-      createdAt: '2026-10-01T12:00:00.000Z',
-      paymentId: 'txn_abc123',
-    );
+  id: 'bk_1',
+  reference: 'MC-2K4F9',
+  userId: userId,
+  status: BookingStatus.confirmed,
+  items: [
+    CartItem(
+      id: 'line_1',
+      serviceId: 's1',
+      quantity: 1,
+      serviceName: 'Split AC Deep Cleaning',
+      optionName: 'Up to 2 units',
+      unitPrice: _aed(15000),
+      addons: [CartAddon(id: 'a1', name: 'Gas top-up', price: _aed(5000))],
+    ),
+  ],
+  slot: _slot(),
+  location: const BookingLocation(
+    addressText: 'Marina Walk, Tower 1',
+    area: 'Dubai Marina',
+  ),
+  subtotal: _aed(20000),
+  total: _aed(20000),
+  notes: 'Call on arrival',
+  createdAt: '2026-10-01T12:00:00.000Z',
+  paymentId: 'txn_abc123',
+);
 
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+  ],
+  child: const MicrocareApp(),
+);
 
 ProviderContainer _containerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)));
 
 Future<AuthUser> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 /// Sign in, seed the bookings built from the signed-in user's id, then open
 /// [path] on a tall surface. Returns the container (session already restored).
@@ -94,15 +98,17 @@ Future<ProviderContainer> _open(
 }
 
 void main() {
-  testWidgets('shows the empty state when there are no bookings',
-      (tester) async {
+  testWidgets('shows the empty state when there are no bookings', (
+    tester,
+  ) async {
     await _open(tester);
     expect(find.text('No bookings yet'), findsOneWidget);
     expect(find.text('Browse services'), findsOneWidget);
   });
 
-  testWidgets('lists a booking card with its reference, service and total',
-      (tester) async {
+  testWidgets('lists a booking card with its reference, service and total', (
+    tester,
+  ) async {
     await _open(tester, bookingsFor: (id) => [_booking(id)]);
 
     expect(find.text('MC-2K4F9'), findsOneWidget);
@@ -124,8 +130,9 @@ void main() {
     expect(find.text('Call on arrival'), findsOneWidget);
   });
 
-  testWidgets('an unknown booking id shows the not-found state',
-      (tester) async {
+  testWidgets('an unknown booking id shows the not-found state', (
+    tester,
+  ) async {
     await _open(tester, path: '/orders/does-not-exist');
     expect(find.text('Booking not found'), findsOneWidget);
     expect(find.text('Back to bookings'), findsOneWidget);

@@ -38,12 +38,12 @@ class _FakeAdapter implements HttpClientAdapter {
 }
 
 ResponseBody _json(Object? body, {int status = 200}) => ResponseBody.fromString(
-      jsonEncode(body),
-      status,
-      headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
-    );
+  jsonEncode(body),
+  status,
+  headers: {
+    Headers.contentTypeHeader: [Headers.jsonContentType],
+  },
+);
 
 CatalogRepository _liveRepo(_FakeAdapter adapter) {
   final dio = Dio()..httpClientAdapter = adapter;
@@ -52,10 +52,10 @@ CatalogRepository _liveRepo(_FakeAdapter adapter) {
 }
 
 CatalogRepository _mockRepo() => CatalogRepository(
-      ApiClient(baseUrl: 'http://localhost:5050'),
-      useMock: true,
-      mockLatency: Duration.zero,
-    );
+  ApiClient(baseUrl: 'http://localhost:5050'),
+  useMock: true,
+  mockLatency: Duration.zero,
+);
 
 // Canned backend payloads (raw shapes, BEFORE adapting).
 final _backendServices = [
@@ -94,7 +94,9 @@ final _backendAddons = [
 void main() {
   group('live branch — adapters', () {
     test('maps a backend service to the domain shape', () async {
-      final repo = _liveRepo(_FakeAdapter((_) => _json({'data': _backendServices})));
+      final repo = _liveRepo(
+        _FakeAdapter((_) => _json({'data': _backendServices})),
+      );
 
       final services = await repo.getServices();
       final split = services.firstWhere((s) => s.id == 'svc_split_clean');
@@ -102,72 +104,99 @@ void main() {
       // label → name; string price → Money fils.
       expect(split.options, hasLength(2));
       expect(split.options.first.name, '1 unit');
-      expect(split.options.first.price,
-          const Money(amountMinor: 9900, currency: CurrencyCode.aed));
+      expect(
+        split.options.first.price,
+        const Money(amountMinor: 9900, currency: CurrencyCode.aed),
+      );
       // basePrice = cheapest option ("from" price).
       expect(split.basePrice.amountMinor, 9900);
       // relative image → absolute against the base URL.
-      expect(split.image!.uri, 'http://localhost:5050/images/services/split.jpg');
+      expect(
+        split.image!.uri,
+        'http://localhost:5050/images/services/split.jpg',
+      );
       // no server duration → 0; synthetic category; active default.
       expect(split.duration, 0);
       expect(split.categoryId, acServicesCategory.id);
       expect(split.active, isTrue);
     });
 
-    test('a service with no options gets a zero basePrice and no image', () async {
-      final repo = _liveRepo(_FakeAdapter((_) => _json({'data': _backendServices})));
+    test(
+      'a service with no options gets a zero basePrice and no image',
+      () async {
+        final repo = _liveRepo(
+          _FakeAdapter((_) => _json({'data': _backendServices})),
+        );
 
-      final services = await repo.getServices();
-      final gas = services.firstWhere((s) => s.id == 'svc_gas_refill');
+        final services = await repo.getServices();
+        final gas = services.firstWhere((s) => s.id == 'svc_gas_refill');
 
-      expect(gas.options, isEmpty);
-      expect(gas.basePrice.amountMinor, 0);
-      expect(gas.image, isNull);
-    });
+        expect(gas.options, isEmpty);
+        expect(gas.basePrice.amountMinor, 0);
+        expect(gas.image, isNull);
+      },
+    );
   });
 
   group('live branch — filtering', () {
     test('search filters over name and description', () async {
-      final repo = _liveRepo(_FakeAdapter((_) => _json({'data': _backendServices})));
+      final repo = _liveRepo(
+        _FakeAdapter((_) => _json({'data': _backendServices})),
+      );
 
       final byName = await repo.getServices(ServiceQuery(search: 'gas'));
       expect(byName.map((s) => s.id), ['svc_gas_refill']);
 
-      final byDesc = await repo.getServices(ServiceQuery(search: 'refrigerant'));
+      final byDesc = await repo.getServices(
+        ServiceQuery(search: 'refrigerant'),
+      );
       expect(byDesc.map((s) => s.id), ['svc_gas_refill']);
     });
 
-    test('the synthetic category id matches all; any other id matches none',
-        () async {
-      final repo = _liveRepo(_FakeAdapter((_) => _json({'data': _backendServices})));
+    test(
+      'the synthetic category id matches all; any other id matches none',
+      () async {
+        final repo = _liveRepo(
+          _FakeAdapter((_) => _json({'data': _backendServices})),
+        );
 
-      final all = await repo.getServices(
-          ServiceQuery(categoryId: acServicesCategory.id));
-      expect(all, hasLength(2));
+        final all = await repo.getServices(
+          ServiceQuery(categoryId: acServicesCategory.id),
+        );
+        expect(all, hasLength(2));
 
-      final none = await repo.getServices(ServiceQuery(categoryId: 'cat_other'));
-      expect(none, isEmpty);
-    });
+        final none = await repo.getServices(
+          ServiceQuery(categoryId: 'cat_other'),
+        );
+        expect(none, isEmpty);
+      },
+    );
   });
 
   group('live branch — getServiceById', () {
-    test('fetches services + addons in parallel and attaches the add-ons',
-        () async {
-      final adapter = _FakeAdapter((options) {
-        if (options.path == '/api/addons') return _json({'data': _backendAddons});
-        return _json({'data': _backendServices});
-      });
-      final repo = _liveRepo(adapter);
+    test(
+      'fetches services + addons in parallel and attaches the add-ons',
+      () async {
+        final adapter = _FakeAdapter((options) {
+          if (options.path == '/api/addons')
+            return _json({'data': _backendAddons});
+          return _json({'data': _backendServices});
+        });
+        final repo = _liveRepo(adapter);
 
-      final service = await repo.getServiceById('svc_split_clean');
+        final service = await repo.getServiceById('svc_split_clean');
 
-      expect(service.id, 'svc_split_clean');
-      expect(service.addons, hasLength(1));
-      expect(service.addons.first.name, 'Deep coil clean');
-      expect(service.addons.first.price.amountMinor, 6000);
-      // The add-ons request carried the serviceId query param.
-      expect(adapter.lastRequest?.queryParameters['serviceId'], anyOf('svc_split_clean', isNull));
-    });
+        expect(service.id, 'svc_split_clean');
+        expect(service.addons, hasLength(1));
+        expect(service.addons.first.name, 'Deep coil clean');
+        expect(service.addons.first.price.amountMinor, 6000);
+        // The add-ons request carried the serviceId query param.
+        expect(
+          adapter.lastRequest?.queryParameters['serviceId'],
+          anyOf('svc_split_clean', isNull),
+        );
+      },
+    );
 
     test('throws ServiceNotFoundError when the id is absent', () async {
       final adapter = _FakeAdapter((options) {
@@ -184,18 +213,27 @@ void main() {
   });
 
   group('live branch — categories', () {
-    test('getCategories returns only the synthetic AC Services category',
-        () async {
-      final repo = _liveRepo(_FakeAdapter((_) => _json({'data': _backendServices})));
+    test(
+      'getCategories returns only the synthetic AC Services category',
+      () async {
+        final repo = _liveRepo(
+          _FakeAdapter((_) => _json({'data': _backendServices})),
+        );
 
-      final cats = await repo.getCategories();
-      expect(cats, [acServicesCategory]);
-    });
+        final cats = await repo.getCategories();
+        expect(cats, [acServicesCategory]);
+      },
+    );
 
     test('getCategoryById returns the synthetic category or null', () async {
-      final repo = _liveRepo(_FakeAdapter((_) => _json({'data': _backendServices})));
+      final repo = _liveRepo(
+        _FakeAdapter((_) => _json({'data': _backendServices})),
+      );
 
-      expect(await repo.getCategoryById(acServicesCategory.id), acServicesCategory);
+      expect(
+        await repo.getCategoryById(acServicesCategory.id),
+        acServicesCategory,
+      );
       expect(await repo.getCategoryById('nope'), isNull);
     });
   });
@@ -208,16 +246,21 @@ void main() {
     });
 
     test('filters by fine-grained category id', () async {
-      final cleaning = await _mockRepo()
-          .getServices(ServiceQuery(categoryId: 'cat_ac_cleaning'));
+      final cleaning = await _mockRepo().getServices(
+        ServiceQuery(categoryId: 'cat_ac_cleaning'),
+      );
       expect(cleaning, hasLength(3));
       expect(cleaning.every((s) => s.categoryId == 'cat_ac_cleaning'), isTrue);
     });
 
     test('search matches name, summary or description', () async {
-      final results = await _mockRepo().getServices(ServiceQuery(search: 'duct'));
-      expect(results.map((s) => s.id),
-          containsAll(<String>['svc_duct_clean', 'svc_duct_sanitize']));
+      final results = await _mockRepo().getServices(
+        ServiceQuery(search: 'duct'),
+      );
+      expect(
+        results.map((s) => s.id),
+        containsAll(<String>['svc_duct_clean', 'svc_duct_sanitize']),
+      );
     });
 
     test('getCategories returns 5 categories sorted by sortOrder', () async {
@@ -243,8 +286,10 @@ void main() {
       expect(ServiceQuery(search: '  clean  '), ServiceQuery(search: 'clean'));
       expect(ServiceQuery(search: '   '), ServiceQuery.all);
       expect(ServiceQuery(categoryId: ''), ServiceQuery.all);
-      expect(ServiceQuery(search: 'clean').hashCode,
-          ServiceQuery(search: 'clean').hashCode);
+      expect(
+        ServiceQuery(search: 'clean').hashCode,
+        ServiceQuery(search: 'clean').hashCode,
+      );
     });
   });
 }

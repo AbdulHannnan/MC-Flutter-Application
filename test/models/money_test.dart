@@ -9,23 +9,31 @@ import 'package:microcare/src/models/money.dart';
 void main() {
   group('Money.fromAed (port of aedToMoney)', () {
     test('parses a major-unit AED string into minor units', () {
-      expect(Money.fromAed('135.00'),
-          const Money(amountMinor: 13500, currency: CurrencyCode.aed));
+      expect(
+        Money.fromAed('135.00'),
+        const Money(amountMinor: 13500, currency: CurrencyCode.aed),
+      );
     });
 
     test('rounds instead of truncating, avoiding float drift', () {
-      expect(Money.fromAed('135'),
-          const Money(amountMinor: 13500, currency: CurrencyCode.aed));
+      expect(
+        Money.fromAed('135'),
+        const Money(amountMinor: 13500, currency: CurrencyCode.aed),
+      );
     });
 
     test('accepts a number as well as a string', () {
-      expect(Money.fromAed(40),
-          const Money(amountMinor: 4000, currency: CurrencyCode.aed));
+      expect(
+        Money.fromAed(40),
+        const Money(amountMinor: 4000, currency: CurrencyCode.aed),
+      );
     });
 
     test('falls back to 0 for an unparseable value', () {
-      expect(Money.fromAed('not-a-number'),
-          const Money(amountMinor: 0, currency: CurrencyCode.aed));
+      expect(
+        Money.fromAed('not-a-number'),
+        const Money(amountMinor: 0, currency: CurrencyCode.aed),
+      );
     });
   });
 
@@ -58,7 +66,10 @@ void main() {
 
     test('scales by a whole quantity', () {
       const unit = Money(amountMinor: 4000, currency: CurrencyCode.aed);
-      expect(unit * 3, const Money(amountMinor: 12000, currency: CurrencyCode.aed));
+      expect(
+        unit * 3,
+        const Money(amountMinor: 12000, currency: CurrencyCode.aed),
+      );
     });
   });
 

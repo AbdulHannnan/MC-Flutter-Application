@@ -80,32 +80,63 @@ void main() {
     paymentId: 'pay1',
   );
 
-  void roundTrips(String name, Map<String, dynamic> json, Map<String, dynamic> Function(Map<String, dynamic>) reparse) {
+  void roundTrips(
+    String name,
+    Map<String, dynamic> json,
+    Map<String, dynamic> Function(Map<String, dynamic>) reparse,
+  ) {
     test('$name survives a JSON round-trip', () {
       expect(reparse(json), equals(json));
     });
   }
 
   group('domain model JSON round-trips', () {
-    roundTrips('ImageRef', service.image!.toJson(),
-        (j) => ImageRef.fromJson(j).toJson());
-    roundTrips('ServiceOption', option.toJson(),
-        (j) => ServiceOption.fromJson(j).toJson());
-    roundTrips('ServiceAddon', addon.toJson(),
-        (j) => ServiceAddon.fromJson(j).toJson());
-    roundTrips('ServiceCategory', acServicesCategory.toJson(),
-        (j) => ServiceCategory.fromJson(j).toJson());
-    roundTrips('Service', service.toJson(),
-        (j) => Service.fromJson(j).toJson());
-    roundTrips('LatLng', location.coords!.toJson(),
-        (j) => LatLng.fromJson(j).toJson());
-    roundTrips('BookingLocation', location.toJson(),
-        (j) => BookingLocation.fromJson(j).toJson());
+    roundTrips(
+      'ImageRef',
+      service.image!.toJson(),
+      (j) => ImageRef.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'ServiceOption',
+      option.toJson(),
+      (j) => ServiceOption.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'ServiceAddon',
+      addon.toJson(),
+      (j) => ServiceAddon.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'ServiceCategory',
+      acServicesCategory.toJson(),
+      (j) => ServiceCategory.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'Service',
+      service.toJson(),
+      (j) => Service.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'LatLng',
+      location.coords!.toJson(),
+      (j) => LatLng.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'BookingLocation',
+      location.toJson(),
+      (j) => BookingLocation.fromJson(j).toJson(),
+    );
     roundTrips('TimeSlot', slot.toJson(), (j) => TimeSlot.fromJson(j).toJson());
-    roundTrips('CartItem', cartItem.toJson(),
-        (j) => CartItem.fromJson(j).toJson());
-    roundTrips('Booking', booking.toJson(),
-        (j) => Booking.fromJson(j).toJson());
+    roundTrips(
+      'CartItem',
+      cartItem.toJson(),
+      (j) => CartItem.fromJson(j).toJson(),
+    );
+    roundTrips(
+      'Booking',
+      booking.toJson(),
+      (j) => Booking.fromJson(j).toJson(),
+    );
   });
 
   test('acServicesCategory is the synthetic single category', () {

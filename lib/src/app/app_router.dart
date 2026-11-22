@@ -55,6 +55,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   ref.onDispose(refresh.dispose);
   ref.listen(sessionProvider, (_, _) => refresh.value++);
+  // Also re-evaluate when the cold-start welcome animation finishes, so the
+  // guard can release the splash once it has played (see _authGuard).
+  ref.listen(splashGateProvider, (_, _) => refresh.value++);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
@@ -168,11 +171,16 @@ final routerProvider = Provider<GoRouter>((ref) {
 /// The auth boundary. Returns a path to redirect to, or null to allow the route.
 String? _authGuard(Ref ref, GoRouterState state) {
   final session = ref.read(sessionProvider);
+  final welcomePlayed = ref.read(splashGateProvider);
   final location = state.matchedLocation;
   final onSplash = location == AppRoutes.splash;
 
-  // Still restoring the saved session — hold on the splash.
-  if (session.isRestoring) return onSplash ? null : AppRoutes.splash;
+  // Hold on the splash until BOTH the saved session has restored AND the
+  // cold-start welcome animation has finished playing, so the branded welcome
+  // always shows in full on app open instead of flashing past.
+  if (session.isRestoring || !welcomePlayed) {
+    return onSplash ? null : AppRoutes.splash;
+  }
 
   final onAuthRoute = AppRoutes.authRoutes.contains(location);
 

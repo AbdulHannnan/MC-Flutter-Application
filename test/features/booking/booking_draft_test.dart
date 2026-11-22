@@ -10,12 +10,24 @@ import 'package:microcare/src/models/models.dart';
 
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
-final _option1 =
-    ServiceOption(id: 'o1', name: '1 unit', price: _aed(9900), duration: 60);
-final _option2 =
-    ServiceOption(id: 'o2', name: '2 units', price: _aed(17900), duration: 90);
+final _option1 = ServiceOption(
+  id: 'o1',
+  name: '1 unit',
+  price: _aed(9900),
+  duration: 60,
+);
+final _option2 = ServiceOption(
+  id: 'o2',
+  name: '2 units',
+  price: _aed(17900),
+  duration: 90,
+);
 final _addon1 = ServiceAddon(
-    id: 'a1', name: 'Deep clean', price: _aed(1000), duration: 15);
+  id: 'a1',
+  name: 'Deep clean',
+  price: _aed(1000),
+  duration: 15,
+);
 final _addon2 = ServiceAddon(id: 'a2', name: 'Gas top-up', price: _aed(2000));
 
 final _service = Service(
@@ -31,7 +43,8 @@ final _service = Service(
 
 void main() {
   late ProviderContainer container;
-  BookingDraftController ctrl() => container.read(bookingDraftProvider.notifier);
+  BookingDraftController ctrl() =>
+      container.read(bookingDraftProvider.notifier);
   BookingDraft draft() => container.read(bookingDraftProvider);
 
   setUp(() {
@@ -97,7 +110,11 @@ void main() {
   test('setLocation / setSlot / setNotes keep the rest of the draft', () {
     ctrl().start(_service, _option1);
     const loc = BookingLocation(addressText: 'Marina', area: 'Dubai Marina');
-    const slot = TimeSlot(id: 't1', start: '2026-10-01T09:00:00', end: '2026-10-01T10:00:00');
+    const slot = TimeSlot(
+      id: 't1',
+      start: '2026-10-01T09:00:00',
+      end: '2026-10-01T10:00:00',
+    );
 
     ctrl()
       ..setLocation(loc)
@@ -121,18 +138,20 @@ void main() {
     expect(draft().normalizedNotes, 'hello');
   });
 
-  test('applyLiveUnitPrice updates the option price, or the base with no option',
-      () {
-    ctrl().start(_service, _option1);
-    ctrl().applyLiveUnitPrice(_aed(8800));
-    expect(draft().option?.price, _aed(8800));
-    expect(draft().unitPrice, _aed(8800));
+  test(
+    'applyLiveUnitPrice updates the option price, or the base with no option',
+    () {
+      ctrl().start(_service, _option1);
+      ctrl().applyLiveUnitPrice(_aed(8800));
+      expect(draft().option?.price, _aed(8800));
+      expect(draft().unitPrice, _aed(8800));
 
-    ctrl().setOption(null);
-    ctrl().applyLiveUnitPrice(_aed(4200));
-    expect(draft().service?.basePrice, _aed(4200));
-    expect(draft().unitPrice, _aed(4200));
-  });
+      ctrl().setOption(null);
+      ctrl().applyLiveUnitPrice(_aed(4200));
+      expect(draft().service?.basePrice, _aed(4200));
+      expect(draft().unitPrice, _aed(4200));
+    },
+  );
 
   test('buildCartItem snapshots the configured booking', () {
     ctrl()

@@ -15,20 +15,22 @@ import 'package:microcare/src/features/booking/booking.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-        catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
-        ),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    catalogRepositoryProvider.overrideWithValue(
+      CatalogRepository(
+        ApiClient(baseUrl: 'http://localhost:5050'),
+        useMock: true,
+        mockLatency: Duration.zero,
+      ),
+    ),
+  ],
+  child: const MicrocareApp(),
+);
 
 ProviderContainer _containerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)));
@@ -37,10 +39,10 @@ GoRouter _routerOf(WidgetTester tester) =>
     _containerOf(tester).read(routerProvider);
 
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 /// Sign in, land on Home, then open a service detail. Uses a tall surface so the
 /// option/add-on rows are laid out and tappable.
@@ -90,8 +92,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('Continue starts the draft and advances to Location',
-      (tester) async {
+  testWidgets('Continue starts the draft and advances to Location', (
+    tester,
+  ) async {
     await _openService(tester, 'svc_split_clean');
 
     // Choose the second option, then continue.

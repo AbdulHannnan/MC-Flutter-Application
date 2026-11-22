@@ -32,7 +32,10 @@ void main() {
   });
 
   test('demo mode greys out the deterministic (day+hour)%3==0 slice', () {
-    final demo = AvailabilityRepository(latency: Duration.zero, demoTaken: true);
+    final demo = AvailabilityRepository(
+      latency: Duration.zero,
+      demoTaken: true,
+    );
     final byHour = {
       for (final s in demo.buildSlots('2030-06-15'))
         int.parse(s.id.split('_').last): s.isAvailable,
@@ -47,6 +50,9 @@ void main() {
 
   test('getDaySlots awaits and returns the built slots', () async {
     final slots = await repo.getDaySlots('2030-06-15');
-    expect(slots.map((s) => s.id), repo.buildSlots('2030-06-15').map((s) => s.id));
+    expect(
+      slots.map((s) => s.id),
+      repo.buildSlots('2030-06-15').map((s) => s.id),
+    );
   });
 }

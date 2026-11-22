@@ -12,32 +12,34 @@ import 'package:microcare/src/features/cart/cart_controller.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
 CartItem _item({int quantity = 1, int unit = 5000}) => CartItem(
-      id: 'line_1',
-      serviceId: 's1',
-      quantity: quantity,
-      serviceName: 'Split AC Deep Cleaning',
-      unitPrice: _aed(unit),
-    );
+  id: 'line_1',
+  serviceId: 's1',
+  quantity: quantity,
+  serviceName: 'Split AC Deep Cleaning',
+  unitPrice: _aed(unit),
+);
 
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+  ],
+  child: const MicrocareApp(),
+);
 
 ProviderContainer _containerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)));
 
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 /// Sign in and open the cart on a tall surface so cards + footer lay out.
 Future<ProviderContainer> _openCart(WidgetTester tester) async {
@@ -64,8 +66,9 @@ void main() {
     expect(find.text('Checkout'), findsNothing);
   });
 
-  testWidgets('renders a line with its total and a working stepper',
-      (tester) async {
+  testWidgets('renders a line with its total and a working stepper', (
+    tester,
+  ) async {
     final container = await _openCart(tester);
     container.read(cartProvider.notifier).add(_item(quantity: 1));
     await tester.pumpAndSettle();
@@ -82,8 +85,9 @@ void main() {
     expect(find.text('100.00 AED'), findsNWidgets(2));
   });
 
-  testWidgets('remove clears the line and shows the empty state',
-      (tester) async {
+  testWidgets('remove clears the line and shows the empty state', (
+    tester,
+  ) async {
     final container = await _openCart(tester);
     container.read(cartProvider.notifier).add(_item());
     await tester.pumpAndSettle();

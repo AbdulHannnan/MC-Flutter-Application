@@ -18,20 +18,22 @@ import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:microcare/src/features/services/screens/categories_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/welcome_gate.dart';
+
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-        catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
-        ),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    catalogRepositoryProvider.overrideWithValue(
+      CatalogRepository(
+        ApiClient(baseUrl: 'http://localhost:5050'),
+        useMock: true,
+        mockLatency: Duration.zero,
+      ),
+    ),
+  ],
+  child: const MicrocareApp(),
+);
 
 GoRouter _routerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)))
@@ -39,14 +41,15 @@ GoRouter _routerOf(WidgetTester tester) =>
 
 /// Seed a signed-in session by creating an account in the (shared) mock store.
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 void main() {
-  testWidgets('signed-out deep link to a protected route bounces to login',
-      (tester) async {
+  testWidgets('signed-out deep link to a protected route bounces to login', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
 
     await tester.pumpWidget(_app());
@@ -96,8 +99,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('a booking step with no draft bounces home (guard pattern)',
-      (tester) async {
+  testWidgets('a booking step with no draft bounces home (guard pattern)', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     await _seedSignedIn();
 
@@ -106,7 +110,10 @@ void main() {
 
     _routerOf(tester).go('/booking/location');
     await tester.pumpAndSettle();
-    expect(find.text('Hi Jane 👋'), findsOneWidget); // bounced by the draft guard
+    expect(
+      find.text('Hi Jane 👋'),
+      findsOneWidget,
+    ); // bounced by the draft guard
 
     await tester.pumpWidget(const SizedBox());
   });

@@ -18,18 +18,18 @@ Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
 int _seq = 0;
 CartItem _line() => CartItem(
-      id: 'line_${_seq++}',
-      serviceId: 'svc_split_clean',
-      quantity: 1,
-      serviceName: 'Split AC Deep Cleaning',
-      unitPrice: _aed(9900),
-      location: const BookingLocation(addressText: 'Marina Gate 1'),
-      slot: const TimeSlot(
-        id: 'slot_1',
-        start: '2026-09-01T10:00:00.000',
-        end: '2026-09-01T11:00:00.000',
-      ),
-    );
+  id: 'line_${_seq++}',
+  serviceId: 'svc_split_clean',
+  quantity: 1,
+  serviceName: 'Split AC Deep Cleaning',
+  unitPrice: _aed(9900),
+  location: const BookingLocation(addressText: 'Marina Gate 1'),
+  slot: const TimeSlot(
+    id: 'slot_1',
+    start: '2026-09-01T10:00:00.000',
+    end: '2026-09-01T11:00:00.000',
+  ),
+);
 
 /// Records submits; can be told to throw to exercise the failure path.
 class _FakeBookingsApi implements BookingsApi {
@@ -62,8 +62,9 @@ void main() {
   ProviderContainer makeContainer(BookingsApi bookings, _FakeOrders orders) {
     final c = ProviderContainer(
       overrides: [
-        paymentApiProvider
-            .overrideWithValue(MockPaymentApi(latency: Duration.zero)),
+        paymentApiProvider.overrideWithValue(
+          MockPaymentApi(latency: Duration.zero),
+        ),
         bookingsApiProvider.overrideWithValue(bookings),
         ordersRepositoryProvider.overrideWithValue(orders),
       ],
@@ -72,31 +73,35 @@ void main() {
     return c;
   }
 
-  test('a successful pay places bookings, clears cart+draft, records outcome',
-      () async {
-    final orders = _FakeOrders();
-    final c = makeContainer(_FakeBookingsApi(), orders);
+  test(
+    'a successful pay places bookings, clears cart+draft, records outcome',
+    () async {
+      final orders = _FakeOrders();
+      final c = makeContainer(_FakeBookingsApi(), orders);
 
-    // Seed two cart lines + a draft.
-    c.read(cartProvider.notifier)
-      ..add(_line())
-      ..add(_line());
-    c.read(bookingDraftProvider.notifier).setNotes('x'); // make the draft non-empty
+      // Seed two cart lines + a draft.
+      c.read(cartProvider.notifier)
+        ..add(_line())
+        ..add(_line());
+      c
+          .read(bookingDraftProvider.notifier)
+          .setNotes('x'); // make the draft non-empty
 
-    final outcome = await c
-        .read(checkoutControllerProvider.notifier)
-        .pay(phone: '0501234567', email: 'jane@example.com');
+      final outcome = await c
+          .read(checkoutControllerProvider.notifier)
+          .pay(phone: '0501234567', email: 'jane@example.com');
 
-    expect(outcome.success, isTrue);
-    expect(outcome.references, hasLength(2));
-    expect(outcome.amount, _aed(19800)); // 9900 × 2 lines
-    expect(outcome.transactionRef, isNotNull);
-    expect(orders.saved, hasLength(2)); // persisted to order history
-    expect(c.read(cartProvider), isEmpty); // cart cleared
-    expect(c.read(bookingDraftProvider).notes, isEmpty); // draft reset
-    // Outcome is also retained for the Success screen to read.
-    expect(c.read(checkoutControllerProvider)?.success, isTrue);
-  });
+      expect(outcome.success, isTrue);
+      expect(outcome.references, hasLength(2));
+      expect(outcome.amount, _aed(19800)); // 9900 × 2 lines
+      expect(outcome.transactionRef, isNotNull);
+      expect(orders.saved, hasLength(2)); // persisted to order history
+      expect(c.read(cartProvider), isEmpty); // cart cleared
+      expect(c.read(bookingDraftProvider).notes, isEmpty); // draft reset
+      // Outcome is also retained for the Success screen to read.
+      expect(c.read(checkoutControllerProvider)?.success, isTrue);
+    },
+  );
 
   test('a submit failure fails checkout and leaves the cart intact', () async {
     final orders = _FakeOrders();

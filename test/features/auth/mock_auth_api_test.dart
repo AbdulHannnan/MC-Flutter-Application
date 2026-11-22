@@ -34,77 +34,117 @@ void main() {
   test('signUp rejects a duplicate email', () async {
     final api = _api();
     await api.signUp(
-        fullName: 'Jane', email: 'jane@example.com', password: 'supersecret');
+      fullName: 'Jane',
+      email: 'jane@example.com',
+      password: 'supersecret',
+    );
 
     expect(
       () => api.signUp(
-          fullName: 'Other', email: 'JANE@example.com', password: 'whatever12'),
+        fullName: 'Other',
+        email: 'JANE@example.com',
+        password: 'whatever12',
+      ),
       throwsA(isA<AuthError>()),
     );
   });
 
-  test('signIn succeeds with the right password, fails generically otherwise',
-      () async {
-    final api = _api();
-    await api.signUp(
-        fullName: 'Jane', email: 'jane@example.com', password: 'supersecret');
-    await api.signOut();
+  test(
+    'signIn succeeds with the right password, fails generically otherwise',
+    () async {
+      final api = _api();
+      await api.signUp(
+        fullName: 'Jane',
+        email: 'jane@example.com',
+        password: 'supersecret',
+      );
+      await api.signOut();
 
-    final user =
-        await api.signIn(email: 'jane@example.com', password: 'supersecret');
-    expect(user.email, 'jane@example.com');
+      final user = await api.signIn(
+        email: 'jane@example.com',
+        password: 'supersecret',
+      );
+      expect(user.email, 'jane@example.com');
 
-    // Wrong password and unknown email both raise the SAME generic error.
-    await expectLater(
-      api.signIn(email: 'jane@example.com', password: 'wrong'),
-      throwsA(isA<AuthError>().having(
-          (e) => e.message, 'message', 'Invalid email or password.')),
-    );
-    await expectLater(
-      api.signIn(email: 'nobody@example.com', password: 'supersecret'),
-      throwsA(isA<AuthError>().having(
-          (e) => e.message, 'message', 'Invalid email or password.')),
-    );
-  });
+      // Wrong password and unknown email both raise the SAME generic error.
+      await expectLater(
+        api.signIn(email: 'jane@example.com', password: 'wrong'),
+        throwsA(
+          isA<AuthError>().having(
+            (e) => e.message,
+            'message',
+            'Invalid email or password.',
+          ),
+        ),
+      );
+      await expectLater(
+        api.signIn(email: 'nobody@example.com', password: 'supersecret'),
+        throwsA(
+          isA<AuthError>().having(
+            (e) => e.message,
+            'message',
+            'Invalid email or password.',
+          ),
+        ),
+      );
+    },
+  );
 
-  test('resetPassword changes the password and signs in; unknown email throws',
-      () async {
-    final api = _api();
-    await api.signUp(
-        fullName: 'Jane', email: 'jane@example.com', password: 'oldpassword');
+  test(
+    'resetPassword changes the password and signs in; unknown email throws',
+    () async {
+      final api = _api();
+      await api.signUp(
+        fullName: 'Jane',
+        email: 'jane@example.com',
+        password: 'oldpassword',
+      );
 
-    final user = await api.resetPassword(
-        email: 'jane@example.com', password: 'newpassword');
-    expect(user.email, 'jane@example.com');
+      final user = await api.resetPassword(
+        email: 'jane@example.com',
+        password: 'newpassword',
+      );
+      expect(user.email, 'jane@example.com');
 
-    // Old password no longer works; new one does.
-    await expectLater(
-      api.signIn(email: 'jane@example.com', password: 'oldpassword'),
-      throwsA(isA<AuthError>()),
-    );
-    expect(
-      (await api.signIn(email: 'jane@example.com', password: 'newpassword'))
-          .email,
-      'jane@example.com',
-    );
+      // Old password no longer works; new one does.
+      await expectLater(
+        api.signIn(email: 'jane@example.com', password: 'oldpassword'),
+        throwsA(isA<AuthError>()),
+      );
+      expect(
+        (await api.signIn(
+          email: 'jane@example.com',
+          password: 'newpassword',
+        )).email,
+        'jane@example.com',
+      );
 
-    expect(
-      () => api.resetPassword(email: 'ghost@example.com', password: 'whatever12'),
-      throwsA(isA<AuthError>()),
-    );
-  });
+      expect(
+        () => api.resetPassword(
+          email: 'ghost@example.com',
+          password: 'whatever12',
+        ),
+        throwsA(isA<AuthError>()),
+      );
+    },
+  );
 
   test('signOut clears the session but keeps the user', () async {
     final api = _api();
     await api.signUp(
-        fullName: 'Jane', email: 'jane@example.com', password: 'supersecret');
+      fullName: 'Jane',
+      email: 'jane@example.com',
+      password: 'supersecret',
+    );
 
     await api.signOut();
     expect(await api.getCurrentUser(), isNull);
 
     // The account still exists — can sign back in.
-    final user =
-        await api.signIn(email: 'jane@example.com', password: 'supersecret');
+    final user = await api.signIn(
+      email: 'jane@example.com',
+      password: 'supersecret',
+    );
     expect(user.email, 'jane@example.com');
   });
 }

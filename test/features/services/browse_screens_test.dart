@@ -21,30 +21,32 @@ import 'package:microcare/src/features/services/screens/category_services_screen
 import 'package:microcare/src/features/services/widgets/service_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-        catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
-        ),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    catalogRepositoryProvider.overrideWithValue(
+      CatalogRepository(
+        ApiClient(baseUrl: 'http://localhost:5050'),
+        useMock: true,
+        mockLatency: Duration.zero,
+      ),
+    ),
+  ],
+  child: const MicrocareApp(),
+);
 
 GoRouter _routerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)))
         .read(routerProvider);
 
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 /// Sign in and land on Home, ready to navigate. Uses a tall surface so the
 /// (lazily built) list items further down a screen are laid out and hit-testable.
@@ -98,8 +100,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('Category Services titles itself and lists that category',
-      (tester) async {
+  testWidgets('Category Services titles itself and lists that category', (
+    tester,
+  ) async {
     await _pumpSignedIn(tester);
 
     _routerOf(tester).go('/category/cat_ac_repair');
@@ -135,8 +138,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('Search category chip narrows results with a count',
-      (tester) async {
+  testWidgets('Search category chip narrows results with a count', (
+    tester,
+  ) async {
     await _pumpSignedIn(tester);
 
     _routerOf(tester).go('/search');

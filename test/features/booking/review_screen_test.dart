@@ -21,25 +21,35 @@ import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
 final _avail = AvailabilityRepository(latency: Duration.zero, demoTaken: false);
 
 Service _service() => Service(
-      id: 'svc_split_clean',
-      categoryId: 'cat_ac_cleaning',
-      name: 'Split AC Deep Cleaning',
-      slug: 'split',
-      basePrice: _aed(9900),
+  id: 'svc_split_clean',
+  categoryId: 'cat_ac_cleaning',
+  name: 'Split AC Deep Cleaning',
+  slug: 'split',
+  basePrice: _aed(9900),
+  duration: 60,
+  options: [
+    ServiceOption(
+      id: 'opt_split_1',
+      name: '1 unit',
+      price: _aed(9900),
       duration: 60,
-      options: [
-        ServiceOption(
-            id: 'opt_split_1', name: '1 unit', price: _aed(9900), duration: 60),
-      ],
-    );
+    ),
+  ],
+);
 
-ServiceOption _option([int price = 9900]) =>
-    ServiceOption(id: 'opt_split_1', name: '1 unit', price: _aed(price), duration: 60);
+ServiceOption _option([int price = 9900]) => ServiceOption(
+  id: 'opt_split_1',
+  name: '1 unit',
+  price: _aed(price),
+  duration: 60,
+);
 
 TimeSlot _futureSlot() {
   final date = isoDateToString(DateTime.now().add(const Duration(days: 2)));
@@ -49,20 +59,20 @@ TimeSlot _futureSlot() {
 TimeSlot _pastSlot() => _avail.buildSlots('2000-01-01').first;
 
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-        catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
-        ),
-        availabilityRepositoryProvider.overrideWithValue(_avail),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    catalogRepositoryProvider.overrideWithValue(
+      CatalogRepository(
+        ApiClient(baseUrl: 'http://localhost:5050'),
+        useMock: true,
+        mockLatency: Duration.zero,
+      ),
+    ),
+    availabilityRepositoryProvider.overrideWithValue(_avail),
+  ],
+  child: const MicrocareApp(),
+);
 
 ProviderContainer _containerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)));
@@ -74,10 +84,10 @@ String _location(WidgetTester tester) =>
     _routerOf(tester).routerDelegate.currentConfiguration.uri.toString();
 
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 /// Sign in, assemble a full draft (service + option + location + [slot]), and land
 /// on the Review screen. Returns the container for assertions.
@@ -100,7 +110,8 @@ Future<ProviderContainer> _openReview(
   final ctrl = container.read(bookingDraftProvider.notifier);
   ctrl.start(_service(), _option(optionPrice));
   ctrl.setLocation(
-      const BookingLocation(addressText: 'Marina Gate 1', area: 'Dubai Marina'));
+    const BookingLocation(addressText: 'Marina Gate 1', area: 'Dubai Marina'),
+  );
   ctrl.setSlot(slot);
 
   _routerOf(tester).go('/booking/review');
@@ -124,8 +135,9 @@ void main() {
     expect(find.text('99.00 AED'), findsWidgets);
   });
 
-  testWidgets('Add to cart snapshots the draft and lands on the cart',
-      (tester) async {
+  testWidgets('Add to cart snapshots the draft and lands on the cart', (
+    tester,
+  ) async {
     final container = await _openReview(tester, slot: _futureSlot());
 
     await tester.tap(find.text('Add to cart'));
@@ -136,8 +148,9 @@ void main() {
     expect(_location(tester), '/cart');
   });
 
-  testWidgets('Pay now on a stale slot shows a blocking banner and stays',
-      (tester) async {
+  testWidgets('Pay now on a stale slot shows a blocking banner and stays', (
+    tester,
+  ) async {
     final container = await _openReview(tester, slot: _pastSlot());
 
     await tester.tap(find.text('Pay now'));

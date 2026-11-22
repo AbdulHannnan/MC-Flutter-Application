@@ -7,11 +7,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/welcome_gate.dart';
+
 void main() {
   testWidgets('App boots to the Login screen when signed out', (tester) async {
     SharedPreferences.setMockInitialValues({});
 
-    await tester.pumpWidget(const ProviderScope(child: MicrocareApp()));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [skipWelcomeSplash],
+        child: const MicrocareApp(),
+      ),
+    );
     // Let the async session restore resolve (splash → signed out → AuthFlow).
     await tester.pumpAndSettle();
 

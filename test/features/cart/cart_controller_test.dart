@@ -17,15 +17,14 @@ CartItem _item({
   int quantity = 1,
   int unit = 5000,
   List<CartAddon> addons = const [],
-}) =>
-    CartItem(
-      id: id ?? 'line_${_seq++}',
-      serviceId: 's1',
-      quantity: quantity,
-      serviceName: 'Split AC Deep Cleaning',
-      unitPrice: _aed(unit),
-      addons: addons,
-    );
+}) => CartItem(
+  id: id ?? 'line_${_seq++}',
+  serviceId: 's1',
+  quantity: quantity,
+  serviceName: 'Split AC Deep Cleaning',
+  unitPrice: _aed(unit),
+  addons: addons,
+);
 
 /// In-memory storage stub — deterministic, no shared_preferences. Records the
 /// last write so persistence can be asserted, and seeds a starting cart.

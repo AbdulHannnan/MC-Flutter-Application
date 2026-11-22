@@ -37,12 +37,12 @@ class _FakeAdapter implements HttpClientAdapter {
 }
 
 ResponseBody _json(Object? body, {int status = 200}) => ResponseBody.fromString(
-      jsonEncode(body),
-      status,
-      headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
-    );
+  jsonEncode(body),
+  status,
+  headers: {
+    Headers.contentTypeHeader: [Headers.jsonContentType],
+  },
+);
 
 ApiClient _clientWith(_FakeAdapter adapter) {
   final dio = Dio()..httpClientAdapter = adapter;
@@ -52,12 +52,14 @@ ApiClient _clientWith(_FakeAdapter adapter) {
 void main() {
   group('success envelope', () {
     test('unwraps { data: ... } to the inner value', () async {
-      final adapter = _FakeAdapter((_) => _json({
-            'data': [
-              {'id': 's1'},
-              {'id': 's2'},
-            ],
-          }));
+      final adapter = _FakeAdapter(
+        (_) => _json({
+          'data': [
+            {'id': 's1'},
+            {'id': 's2'},
+          ],
+        }),
+      );
       final client = _clientWith(adapter);
 
       final result = await client.get<List<dynamic>>('/api/services');
@@ -76,9 +78,7 @@ void main() {
     });
 
     test('a 204 / empty body yields null', () async {
-      final adapter = _FakeAdapter(
-        (_) => ResponseBody.fromString('', 204),
-      );
+      final adapter = _FakeAdapter((_) => ResponseBody.fromString('', 204));
       final client = _clientWith(adapter);
 
       final result = await client.delete<dynamic>('/api/thing/1');
@@ -89,7 +89,11 @@ void main() {
 
   group('requests', () {
     test('POST sends the JSON body and drops null query params', () async {
-      final adapter = _FakeAdapter((_) => _json({'data': {'id': 'b1'}}));
+      final adapter = _FakeAdapter(
+        (_) => _json({
+          'data': {'id': 'b1'},
+        }),
+      );
       final client = _clientWith(adapter);
 
       await client.post<Map<String, dynamic>>(
@@ -127,15 +131,12 @@ void main() {
 
     test('keeps the raw body (with details) on a 422', () async {
       final adapter = _FakeAdapter(
-        (_) => _json(
-          {
-            'error': 'Validation failed',
-            'details': [
-              {'path': 'email', 'message': 'required'}
-            ],
-          },
-          status: 422,
-        ),
+        (_) => _json({
+          'error': 'Validation failed',
+          'details': [
+            {'path': 'email', 'message': 'required'},
+          ],
+        }, status: 422),
       );
       final client = _clientWith(adapter);
 
@@ -178,10 +179,7 @@ void main() {
 
     test('cancellation is neither timeout nor network', () {
       final e = ApiException.fromDioException(
-        DioException(
-          requestOptions: options(),
-          type: DioExceptionType.cancel,
-        ),
+        DioException(requestOptions: options(), type: DioExceptionType.cancel),
       );
       expect(e.isTimeout, isFalse);
       expect(e.isNetwork, isFalse);

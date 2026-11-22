@@ -19,13 +19,13 @@ Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 /// A minimal draft service with the given id/option — only the ids and the
 /// option price matter to revalidate (it fetches the live service itself).
 Service _service(String id) => Service(
-      id: id,
-      categoryId: 'cat_ac_cleaning',
-      name: 'Split AC Deep Cleaning',
-      slug: 'split',
-      basePrice: _aed(9900),
-      duration: 60,
-    );
+  id: id,
+  categoryId: 'cat_ac_cleaning',
+  name: 'Split AC Deep Cleaning',
+  slug: 'split',
+  basePrice: _aed(9900),
+  duration: 60,
+);
 
 ServiceOption _option(String id, int price) =>
     ServiceOption(id: id, name: 'opt', price: _aed(price), duration: 60);
@@ -37,11 +37,13 @@ TimeSlot _futureSlot() {
   return _avail.buildSlots(date).firstWhere((s) => s.isAvailable);
 }
 
-TimeSlot _pastSlot() => _avail.buildSlots('2000-01-01').first; // isAvailable == false
+TimeSlot _pastSlot() =>
+    _avail.buildSlots('2000-01-01').first; // isAvailable == false
 
 void main() {
   late ProviderContainer container;
-  BookingDraftController ctrl() => container.read(bookingDraftProvider.notifier);
+  BookingDraftController ctrl() =>
+      container.read(bookingDraftProvider.notifier);
 
   setUp(() {
     container = ProviderContainer(

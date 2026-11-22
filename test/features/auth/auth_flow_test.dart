@@ -12,6 +12,8 @@ import 'package:microcare/src/features/auth/mock_auth_api.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/welcome_gate.dart';
+
 void main() {
   testWidgets('sign up → guard redirects to Home → log out', (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -19,8 +21,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          mockAuthApiProvider
-              .overrideWithValue(MockAuthApi(latency: Duration.zero)),
+          skipWelcomeSplash,
+          mockAuthApiProvider.overrideWithValue(
+            MockAuthApi(latency: Duration.zero),
+          ),
           catalogRepositoryProvider.overrideWithValue(
             CatalogRepository(
               ApiClient(baseUrl: 'http://localhost:5050'),

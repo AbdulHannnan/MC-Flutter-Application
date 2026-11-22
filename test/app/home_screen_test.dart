@@ -12,30 +12,33 @@ import 'package:microcare/src/features/auth/mock_auth_api.dart';
 import 'package:microcare/src/features/services/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../support/welcome_gate.dart';
+
 Widget _app() => ProviderScope(
-      overrides: [
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
-        catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
-        ),
-      ],
-      child: const MicrocareApp(),
-    );
+  overrides: [
+    skipWelcomeSplash,
+    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    catalogRepositoryProvider.overrideWithValue(
+      CatalogRepository(
+        ApiClient(baseUrl: 'http://localhost:5050'),
+        useMock: true,
+        mockLatency: Duration.zero,
+      ),
+    ),
+  ],
+  child: const MicrocareApp(),
+);
 
 Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      password: 'supersecret',
-    );
+  fullName: 'Jane Doe',
+  email: 'jane@example.com',
+  password: 'supersecret',
+);
 
 void main() {
-  testWidgets('renders greeting, categories and popular services',
-      (tester) async {
+  testWidgets('renders greeting, categories and popular services', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({});
     await _seedSignedIn();
 
@@ -86,7 +89,10 @@ void main() {
 
     await tester.tap(find.text('Search AC services…'));
     await tester.pumpAndSettle();
-    expect(find.text('Search services…'), findsOneWidget); // search screen field
+    expect(
+      find.text('Search services…'),
+      findsOneWidget,
+    ); // search screen field
 
     await tester.pumpWidget(const SizedBox());
   });

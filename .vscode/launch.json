@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Microcare (dev)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define-from-file=config/dev.json"
+      ]
+    },
+    {
+      "name": "Microcare (dev · mock backend)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--dart-define-from-file=config/dev.json",
+        "--dart-define=CATALOG_MODE=mock",
+        "--dart-define=BOOKINGS_MODE=mock"
+      ]
+    }
+  ]
+}
