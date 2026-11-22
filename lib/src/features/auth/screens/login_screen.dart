@@ -85,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         AppTextField(
           label: 'Email',
-          hintText: 'you@example.com',
+          hintText: 'se.abdulhannan@gmail.com',
           controller: _email,
           errorText: _errors.email,
           keyboardType: TextInputType.emailAddress,

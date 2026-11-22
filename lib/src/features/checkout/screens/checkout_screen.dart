@@ -135,7 +135,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   const SizedBox(height: AppSpacing.md),
                   AppTextField(
                     label: 'Email',
-                    hintText: 'you@example.com',
+                    hintText: 'se.abdulhannan@gmail.com',
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,

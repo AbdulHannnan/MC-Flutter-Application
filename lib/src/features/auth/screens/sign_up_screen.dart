@@ -96,7 +96,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
         AppTextField(
           label: 'Full name',
-          hintText: 'Jane Doe',
+          hintText: 'Abdul Hannan',
           controller: _fullName,
           errorText: _errors.fullName,
           textCapitalization: TextCapitalization.words,
@@ -105,7 +105,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         const SizedBox(height: AppSpacing.md),
         AppTextField(
           label: 'Email',
-          hintText: 'you@example.com',
+          hintText: 'se.abdulhannan@gmail.com',
           controller: _email,
           errorText: _errors.email,
           keyboardType: TextInputType.emailAddress,
