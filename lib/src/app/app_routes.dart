@@ -18,6 +18,16 @@ class AppRoutes {
   // ── Protected area (reachable only when signed IN) ──
   static const String home = '/';
   static const String about = '/about';
+
+  // ── Technician area (reachable only by a signed-in TECHNICIAN account) ──
+  // Staff get their own experience; the customer app (services/booking/cart/…) is
+  // off-limits to them, and this area is off-limits to customers. See the router's
+  // role-aware guard.
+  static const String technicianHome = '/technician';
+
+  /// The technician-only route paths, as a set — used by the guard to keep
+  /// customers out and route technicians in.
+  static const Set<String> technicianRoutes = {technicianHome};
   static const String categories = '/categories';
   static const String search = '/search';
   static const String cart = '/cart';

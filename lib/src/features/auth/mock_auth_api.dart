@@ -23,6 +23,13 @@ import 'auth_user.dart';
 const String _usersKey = 'microcare-mock-users';
 const String _sessionKey = 'microcare-mock-session';
 
+/// A built-in TECHNICIAN account so the staff (job) experience can be signed into
+/// without a self-signup path (technicians are provisioned, not self-registered).
+/// Seeded once by [MockAuthApi.ensureSeeded]. Dev-only, like the rest of this mock.
+const String kDemoTechnicianEmail = 'tech@microcare.ae';
+const String kDemoTechnicianPassword = 'tech12345';
+const String kDemoTechnicianName = 'Sami Technician';
+
 /// Fake network delay so loading spinners are visible in development. Overridable
 /// (set to [Duration.zero] in tests).
 const Duration kMockAuthLatency = Duration(milliseconds: 400);
@@ -86,10 +93,12 @@ class MockAuthApi {
   // ── the public "API" ─────────────────────────────────────────────────────────
 
   /// Create an account and make it the active session. Throws if the email exists.
+  /// [role] defaults to [UserRole.customer]; self-signup never creates staff.
   Future<AuthUser> signUp({
     required String fullName,
     required String email,
     required String password,
+    UserRole role = UserRole.customer,
   }) async {
     await _delay();
     final normalizedEmail = email.trim().toLowerCase();
@@ -99,20 +108,34 @@ class MockAuthApi {
       throw const AuthError('An account with this email already exists.');
     }
 
-    final parts = _nameParts(fullName);
-    final displayName = parts.fullName ?? normalizedEmail;
-    final user = AuthUser(
-      id: _newId(),
+    final user = _buildUser(
       email: normalizedEmail,
-      firstName: parts.firstName,
-      lastName: parts.lastName,
-      fullName: parts.fullName,
-      imageUrl: _avatarUrl(displayName),
+      fullName: fullName,
+      role: role,
     );
 
     await _writeUsers([...users, _StoredUser(user, password)]);
     await (await _prefs).setString(_sessionKey, user.id);
     return user;
+  }
+
+  /// Ensure built-in seed accounts exist (currently the demo [technician]). Called
+  /// once on cold start (see SessionController) BEFORE restoring the session, so the
+  /// staff login always works. Idempotent: it never duplicates or overwrites, and
+  /// it does NOT touch the active session.
+  Future<void> ensureSeeded() async {
+    final users = await _readUsers();
+    final hasTech = users.any(
+      (u) => u.user.email?.toLowerCase() == kDemoTechnicianEmail,
+    );
+    if (hasTech) return;
+
+    final tech = _buildUser(
+      email: kDemoTechnicianEmail,
+      fullName: kDemoTechnicianName,
+      role: UserRole.technician,
+    );
+    await _writeUsers([...users, _StoredUser(tech, kDemoTechnicianPassword)]);
   }
 
   /// Sign in with email + password. Throws a single generic error on any mismatch.
@@ -175,6 +198,26 @@ class MockAuthApi {
   }
 
   // ── tiny helpers ──────────────────────────────────────────────────────────────
+
+  /// Build an [AuthUser] from a name + email + role (shared by signUp and the
+  /// seed path), deriving the name parts and a placeholder avatar.
+  AuthUser _buildUser({
+    required String email,
+    required String fullName,
+    required UserRole role,
+  }) {
+    final parts = _nameParts(fullName);
+    final displayName = parts.fullName ?? email;
+    return AuthUser(
+      id: _newId(),
+      email: email,
+      firstName: parts.firstName,
+      lastName: parts.lastName,
+      fullName: parts.fullName,
+      imageUrl: _avatarUrl(displayName),
+      role: role,
+    );
+  }
 
   String _newId() {
     final rand = Random().nextInt(1 << 32).toRadixString(36);

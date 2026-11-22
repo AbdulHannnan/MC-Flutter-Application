@@ -17,7 +17,7 @@
 // replaces just mock_auth_api.dart + the controller's calls, and screens keep
 // working.
 
-export 'auth_user.dart' show AuthUser;
+export 'auth_user.dart' show AuthUser, UserRole;
 export 'auth_validation.dart'
     show
         kMinPasswordLength,

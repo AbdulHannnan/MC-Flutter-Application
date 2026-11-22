@@ -42,6 +42,7 @@ import '../features/services/screens/categories_screen.dart';
 import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
 import '../features/services/screens/service_detail_screen.dart';
+import '../features/technician/screens/technician_home_screen.dart';
 import 'app_routes.dart';
 import 'screens/home_screen.dart';
 import 'screens/placeholder_screen.dart';
@@ -92,6 +93,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.about,
         builder: (context, state) =>
             const PlaceholderScreen(title: 'About', arrivesIn: 'a later module'),
+      ),
+
+      // Technician (staff) area — the guard lets only technician accounts in.
+      GoRoute(
+        path: AppRoutes.technicianHome,
+        builder: (context, state) => const TechnicianHomeScreen(),
       ),
       GoRoute(
         path: AppRoutes.categories,
@@ -189,7 +196,19 @@ String? _authGuard(Ref ref, GoRouterState state) {
     return onAuthRoute ? null : AppRoutes.signIn;
   }
 
-  // Signed in: auth routes and the (now-finished) splash bounce to Home.
+  // Signed in. Which app the account gets depends on its ROLE (never chosen at
+  // login — it's a property of the account). The two experiences don't overlap:
+  final onTechnicianRoute = AppRoutes.technicianRoutes.contains(location);
+
+  if (session.user?.isTechnician ?? false) {
+    // Technician: only the staff area is reachable. Auth routes, the splash, and
+    // the whole customer app (services/booking/cart/…) bounce to the tech home.
+    return onTechnicianRoute ? null : AppRoutes.technicianHome;
+  }
+
+  // Customer: the staff area is off-limits; auth routes and the finished splash
+  // bounce to Home.
+  if (onTechnicianRoute) return AppRoutes.home;
   if (onAuthRoute || onSplash) return AppRoutes.home;
   return null;
 }
