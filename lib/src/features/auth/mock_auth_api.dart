@@ -12,11 +12,11 @@
 // not ship it as real authentication.
 
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/util/ids.dart';
 import 'auth_user.dart';
 import 'customer_auth_api.dart';
 
@@ -187,10 +187,9 @@ class MockAuthApi implements CustomerAuthApi {
     );
   }
 
-  String _newId() {
-    final rand = Random().nextInt(1 << 32).toRadixString(36);
-    return 'user_${DateTime.now().millisecondsSinceEpoch}_$rand';
-  }
+  // Web-safe unique id (a raw `Random().nextInt(1 << 32)` throws on the web; see
+  // core/util/ids.dart).
+  String _newId() => uniqueId(prefix: 'user');
 
   // Split "Jane Doe" → first/last (+ a display fullName), tolerating extra spaces.
   ({String? firstName, String? lastName, String? fullName}) _nameParts(

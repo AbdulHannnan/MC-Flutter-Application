@@ -8,11 +8,10 @@
 // ran. The mock ALWAYS approves (per the module's chosen behaviour); the failure
 // path is still reachable when a booking submit errors after payment.
 
-import 'dart:math';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
+import '../../core/util/ids.dart';
 import '../../models/models.dart';
 
 /// The outcome of a payment attempt. A success carries the gateway's transaction
@@ -65,10 +64,7 @@ class MockPaymentApi implements PaymentApi {
     return PaymentResult.approved(_txnRef());
   }
 
-  static String _txnRef() {
-    final rand = Random().nextInt(1 << 32).toRadixString(36).toUpperCase();
-    return 'NGP-$rand';
-  }
+  static String _txnRef() => 'NGP-${randomSuffix().toUpperCase()}';
 }
 
 /// The single [PaymentApi] the checkout reads. Mock unless PAYMENTS_MODE=live —

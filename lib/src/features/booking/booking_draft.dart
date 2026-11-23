@@ -14,8 +14,7 @@
 // cart (Module 13) — the draft is TRANSIENT and never persisted: a saved slot
 // would be stale on reopen, and availability is refetched each session anyway.
 
-import 'dart:math';
-
+import '../../core/util/ids.dart';
 import '../../models/models.dart';
 
 class BookingDraft {
@@ -138,11 +137,9 @@ class BookingDraft {
   }
 }
 
-final _rng = Random();
-
 /// A small, collision-resistant line id so each configured booking is its own
-/// cart line. Mirrors RN's `makeLineId` (timestamp + short random suffix).
-String _makeLineId(String serviceId) {
-  final rand = _rng.nextInt(1 << 32).toRadixString(36);
-  return '${serviceId}__${DateTime.now().millisecondsSinceEpoch}__$rand';
-}
+/// cart line. Mirrors RN's `makeLineId` (timestamp + short random suffix). Uses
+/// the web-safe id helper — a raw `Random().nextInt(1 << 32)` throws on the web,
+/// where `1 << 32` is 0 (see core/util/ids.dart).
+String _makeLineId(String serviceId) =>
+    uniqueId(prefix: serviceId, separator: '__');
