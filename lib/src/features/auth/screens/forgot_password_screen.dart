@@ -1,10 +1,13 @@
 // lib/src/features/auth/screens/forgot_password_screen.dart — reset-password UI.
-// Dart port of the RN `ForgotPasswordScreen`.
 //
-// With no email to send a code to, the flow is a SINGLE form: enter your account
-// email and a new password. If that email exists, the mock backend sets the new
-// password and signs you in, and the app gate reveals the protected app — no
-// explicit navigation here. An unknown email comes back as a banner message.
+// EMAIL-ONLY reset: the customer enters their account email and we ask the backend
+// to send a recovery link, which they complete OUTSIDE the app (Supabase Auth
+// cannot set a new password inline from the client). On success the form is
+// replaced by a "check your email" confirmation. We never reveal whether the email
+// has an account — the same neutral confirmation shows either way.
+//
+// (The mock backend has nowhere to send mail, so there it's a no-op that still
+// shows the confirmation — the flow is identical from the screen's point of view.)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,28 +32,20 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _email = TextEditingController();
-  final _password = TextEditingController();
-  final _confirm = TextEditingController();
 
-  bool _showPassword = false;
   bool _submitting = false;
+  bool _sent = false;
   String? _formError;
-  ResetPasswordErrors _errors = const ResetPasswordErrors();
+  ResetRequestErrors _errors = const ResetRequestErrors();
 
   @override
   void dispose() {
     _email.dispose();
-    _password.dispose();
-    _confirm.dispose();
     super.dispose();
   }
 
   Future<void> _handleSubmit() async {
-    final errors = validateResetPassword(
-      email: _email.text,
-      password: _password.text,
-      confirmPassword: _confirm.text,
-    );
+    final errors = validateResetRequest(email: _email.text);
     setState(() {
       _errors = errors;
       _formError = null;
@@ -59,11 +54,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     setState(() => _submitting = true);
     try {
-      await ref.read(sessionProvider.notifier).resetPassword(
+      await ref.read(sessionProvider.notifier).sendPasswordReset(
             email: _email.text,
-            password: _password.text,
           );
-      // Success: the session flips to signedIn and the gate swaps the screen.
+      if (mounted) setState(() => _sent = true);
     } on AuthError catch (e) {
       if (mounted) setState(() => _formError = e.message);
     } catch (_) {
@@ -78,11 +72,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return AuthShell(
-      children: [
+      children: _sent ? _confirmation() : _form(),
+    );
+  }
+
+  // The email-entry form.
+  List<Widget> _form() => [
         const AppText('Reset your password', variant: AppTextVariant.h2),
         const SizedBox(height: AppSpacing.xs),
-        const AppText('Enter your account email and choose a new password.',
-            color: AppTextColor.muted),
+        const AppText(
+          "Enter your account email and we'll send you a link to reset your "
+          'password.',
+          color: AppTextColor.muted,
+        ),
         const SizedBox(height: AppSpacing.xl),
 
         if (_formError != null) ...[
@@ -96,39 +98,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           controller: _email,
           errorText: _errors.email,
           keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AppTextField(
-          label: 'New password',
-          hintText: 'At least $kMinPasswordLength characters',
-          controller: _password,
-          errorText: _errors.password,
-          obscureText: !_showPassword,
-          textInputAction: TextInputAction.next,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AppTextField(
-          label: 'Confirm new password',
-          hintText: 'Re-enter your new password',
-          controller: _confirm,
-          errorText: _errors.confirmPassword,
-          obscureText: !_showPassword,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _handleSubmit(),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AuthLink(
-            _showPassword ? 'Hide password' : 'Show password',
-            onTap: () => setState(() => _showPassword = !_showPassword),
-          ),
         ),
         const SizedBox(height: AppSpacing.xl),
 
         AppButton(
-          label: 'Reset password & sign in',
+          label: 'Send reset link',
           size: AppButtonSize.lg,
           fullWidth: true,
           loading: _submitting,
@@ -144,7 +120,26 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 onTap: () => context.go(AppRoutes.signIn)),
           ],
         ),
-      ],
-    );
-  }
+      ];
+
+  // The post-submit "check your email" confirmation.
+  List<Widget> _confirmation() => [
+        const Icon(Icons.mark_email_read_outlined,
+            size: 48, color: AppColors.primary),
+        const SizedBox(height: AppSpacing.md),
+        const AppText('Check your email', variant: AppTextVariant.h2),
+        const SizedBox(height: AppSpacing.xs),
+        AppText(
+          "If an account exists for ${_email.text.trim()}, we've sent a link to "
+          'reset your password. Follow it, then come back and sign in.',
+          color: AppTextColor.muted,
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        AppButton(
+          label: 'Back to log in',
+          size: AppButtonSize.lg,
+          fullWidth: true,
+          onPressed: () => context.go(AppRoutes.signIn),
+        ),
+      ];
 }

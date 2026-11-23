@@ -33,6 +33,11 @@ enum DataMode { mock, live }
 /// module at a time; the default stays [express] until a path is verified.
 enum Backend { express, supabase }
 
+/// Where customer authentication runs: the in-app [mock] (local, dev-only — the
+/// proven fallback) or real [supabase] Supabase Auth (email/password). Flips via
+/// `AUTH_BACKEND`, default [mock] until verified on-device.
+enum AuthBackend { mock, supabase }
+
 /// Which payment implementation runs: the in-repo [mock], or the real N-Genius
 /// SDK ([live]).
 enum PaymentsMode { mock, live }
@@ -73,6 +78,10 @@ const String _bookingsModeRaw =
 // (the proven fallback); set to `supabase` once that path is verified on-device.
 const String _catalogBackendRaw =
     String.fromEnvironment('CATALOG_BACKEND', defaultValue: 'express');
+// Customer auth source. Default `mock` (the proven local fallback); set to
+// `supabase` once real Supabase Auth is verified on-device.
+const String _authBackendRaw =
+    String.fromEnvironment('AUTH_BACKEND', defaultValue: 'mock');
 const String _paymentsModeRaw =
     String.fromEnvironment('PAYMENTS_MODE', defaultValue: 'mock');
 const String _ngeniusEnvRaw =
@@ -98,6 +107,9 @@ const DataMode _bookingsMode =
 // so a typo can never silently point a live path at the wrong backend.
 const Backend _catalogBackend =
     _catalogBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
+// Anything other than exactly "supabase" resolves to mock (the safe fallback).
+const AuthBackend _authBackend =
+    _authBackendRaw == 'supabase' ? AuthBackend.supabase : AuthBackend.mock;
 const PaymentsMode _paymentsMode =
     _paymentsModeRaw == 'live' ? PaymentsMode.live : PaymentsMode.mock;
 const NgeniusEnv _ngeniusEnv =
@@ -159,6 +171,9 @@ class AppConfig {
   /// `apikey`/Bearer on Supabase calls. Empty until configured.
   final String supabaseAnonKey;
 
+  /// Where customer authentication runs (mock vs real Supabase Auth).
+  final AuthBackend authBackend;
+
   final CatalogConfig catalog;
   final BookingsConfig bookings;
   final PaymentsConfig payments;
@@ -169,6 +184,7 @@ class AppConfig {
     required this.apiBaseUrl,
     required this.supabaseUrl,
     required this.supabaseAnonKey,
+    required this.authBackend,
     required this.catalog,
     required this.bookings,
     required this.payments,
@@ -187,6 +203,11 @@ class AppConfig {
       catalog.mode == DataMode.live &&
       catalog.backend == Backend.supabase &&
       isSupabaseConfigured;
+
+  /// True when customer auth should run on Supabase Auth: the flag is supabase
+  /// AND Supabase is configured. Falls back to the mock otherwise (safe default).
+  bool get isSupabaseAuth =>
+      authBackend == AuthBackend.supabase && isSupabaseConfigured;
   bool get isMockBookings => bookings.mode == DataMode.mock;
   bool get isMockPayments => payments.mode == PaymentsMode.mock;
   bool get isMockPush => push.mode == PushMode.mock;
@@ -206,6 +227,7 @@ class AppConfig {
         'supabaseUrl   : ${supabaseUrl.isEmpty ? '(unset)' : supabaseUrl}',
         'supabaseKey   : ${supabaseAnonKey.isEmpty ? '(unset)' : 'present'}',
         'supabaseReady : $isSupabaseConfigured',
+        'authBackend   : ${authBackend.name}${isSupabaseAuth ? ' (active)' : ''}',
         'catalog.mode  : ${catalog.mode.name}',
         'catalog.backend: ${catalog.backend.name}${isSupabaseCatalog ? ' (active)' : ''}',
         'bookings.mode : ${bookings.mode.name}',
@@ -221,6 +243,7 @@ const AppConfig config = AppConfig(
   apiBaseUrl: _apiBaseUrlRaw,
   supabaseUrl: _supabaseUrlRaw,
   supabaseAnonKey: _supabaseAnonKeyRaw,
+  authBackend: _authBackend,
   catalog: CatalogConfig(mode: _catalogMode, backend: _catalogBackend),
   bookings: BookingsConfig(mode: _bookingsMode),
   payments: PaymentsConfig(mode: _paymentsMode, ngeniusEnv: _ngeniusEnv),

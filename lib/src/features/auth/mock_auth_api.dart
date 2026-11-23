@@ -18,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'auth_user.dart';
+import 'customer_auth_api.dart';
 
 // Storage keys, namespaced like the cart's key will be (Module 13).
 const String _usersKey = 'microcare-mock-users';
@@ -56,7 +57,7 @@ class _StoredUser {
 }
 
 /// The local mock auth backend — the same call sites a real provider would expose.
-class MockAuthApi {
+class MockAuthApi implements CustomerAuthApi {
   MockAuthApi({this.latency = kMockAuthLatency});
 
   /// Simulated network latency; [Duration.zero] in tests.
@@ -87,6 +88,7 @@ class MockAuthApi {
 
   /// Create an account and make it the active session. Throws if the email exists.
   /// [role] defaults to [UserRole.customer]; self-signup never creates staff.
+  @override
   Future<AuthUser> signUp({
     required String fullName,
     required String email,
@@ -113,6 +115,7 @@ class MockAuthApi {
   }
 
   /// Sign in with email + password. Throws a single generic error on any mismatch.
+  @override
   Future<AuthUser> signIn({
     required String email,
     required String password,
@@ -133,34 +136,25 @@ class MockAuthApi {
     return match.first.user;
   }
 
-  /// Set a new password for an existing email and sign that user in.
-  Future<AuthUser> resetPassword({
-    required String email,
-    required String password,
-  }) async {
+  /// Begin a password reset. The mock has no email to send to, so this simply
+  /// resolves — standing in for "a recovery link has been sent" without changing
+  /// the session (the real flow completes outside the app). Never reveals whether
+  /// the email has an account.
+  @override
+  Future<void> sendPasswordReset({required String email}) async {
     await _delay();
-    final normalizedEmail = email.trim().toLowerCase();
-    final users = await _readUsers();
-    final index =
-        users.indexWhere((u) => u.user.email?.toLowerCase() == normalizedEmail);
-
-    if (index == -1) {
-      throw const AuthError('No account found for that email.');
-    }
-
-    final updated = _StoredUser(users[index].user, password);
-    final next = [...users]..[index] = updated;
-    await _writeUsers(next);
-    await (await _prefs).setString(_sessionKey, updated.user.id);
-    return updated.user;
+    // No-op in the mock: there is nowhere to send a recovery email. The Supabase
+    // backend performs the real send.
   }
 
   /// End the current session (users are kept).
+  @override
   Future<void> signOut() async {
     await (await _prefs).remove(_sessionKey);
   }
 
   /// The signed-in user restored from a saved session, or null if none.
+  @override
   Future<AuthUser?> getCurrentUser() async {
     final id = (await _prefs).getString(_sessionKey);
     if (id == null) return null;

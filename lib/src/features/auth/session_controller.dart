@@ -22,13 +22,27 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../config/app_config.dart';
+import '../../core/network/supabase_client.dart';
 import '../cart/cart.dart';
 import '../orders/orders_repository.dart';
 import 'auth_user.dart';
+import 'customer_auth_api.dart';
 import 'mock_auth_api.dart';
+import 'supabase_auth_api.dart';
+
+/// The customer-auth backend this build uses — Supabase Auth when selected +
+/// configured, otherwise the local mock (the proven fallback). The default mock
+/// branch delegates to [mockAuthApiProvider] so existing overrides keep working.
+final customerAuthApiProvider = Provider<CustomerAuthApi>((ref) {
+  if (config.isSupabaseAuth) {
+    return SupabaseAuthApi(ref.watch(supabaseClientProvider));
+  }
+  return ref.watch(mockAuthApiProvider);
+});
 
 class SessionController extends AsyncNotifier<AuthUser?> {
-  MockAuthApi get _api => ref.read(mockAuthApiProvider);
+  CustomerAuthApi get _api => ref.read(customerAuthApiProvider);
 
   /// Cold-start restore: ask the mock backend whether a session is saved. A read
   /// failure means "we can't prove a session" → signed out (null), never an error
@@ -70,16 +84,12 @@ class SessionController extends AsyncNotifier<AuthUser?> {
     return user;
   }
 
-  /// Set a new password for an existing email and sign that user in. Throws
-  /// [AuthError] (e.g. no account) for the screen to surface.
-  Future<AuthUser> resetPassword({
-    required String email,
-    required String password,
-  }) async {
-    final user = await _api.resetPassword(email: email, password: password);
-    state = AsyncData(user);
-    return user;
-  }
+  /// Begin a password reset: the backend emails a recovery link the user
+  /// completes outside the app. Does NOT change the session (they return and sign
+  /// in). Throws [AuthError] for the screen to surface. Resolves without revealing
+  /// whether the email has an account.
+  Future<void> sendPasswordReset({required String email}) =>
+      _api.sendPasswordReset(email: email);
 
   /// End the session (users are kept). The cart (Module 13) and local order
   /// history (Module 14) belong to the previous user, so both are cleared here;

@@ -45,6 +45,11 @@ void main() {
       expect(config.isSupabaseCatalog, isFalse);
     });
 
+    test('auth backend defaults to the mock (the proven fallback)', () {
+      expect(config.authBackend, AuthBackend.mock);
+      expect(config.isSupabaseAuth, isFalse);
+    });
+
     test('describe() lists every key and never prints the anon key', () {
       final text = config.describe();
       for (final key in const [
@@ -53,6 +58,7 @@ void main() {
         'supabaseUrl',
         'supabaseKey',
         'supabaseReady',
+        'authBackend',
         'catalog.mode',
         'catalog.backend',
         'bookings.mode',

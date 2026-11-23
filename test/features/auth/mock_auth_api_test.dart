@@ -91,7 +91,7 @@ void main() {
   );
 
   test(
-    'resetPassword changes the password and signs in; unknown email throws',
+    'sendPasswordReset resolves without changing the session or revealing the account',
     () async {
       final api = _api();
       await api.signUp(
@@ -99,32 +99,18 @@ void main() {
         email: 'jane@example.com',
         password: 'oldpassword',
       );
+      await api.signOut();
 
-      final user = await api.resetPassword(
-        email: 'jane@example.com',
-        password: 'newpassword',
-      );
-      expect(user.email, 'jane@example.com');
+      // Email-only reset: the mock has nowhere to send mail, so it just resolves.
+      // Known and unknown emails both complete (no account-existence leak), and
+      // the password is unchanged — the original still signs in.
+      await api.sendPasswordReset(email: 'jane@example.com');
+      await api.sendPasswordReset(email: 'ghost@example.com');
 
-      // Old password no longer works; new one does.
-      await expectLater(
-        api.signIn(email: 'jane@example.com', password: 'oldpassword'),
-        throwsA(isA<AuthError>()),
-      );
       expect(
-        (await api.signIn(
-          email: 'jane@example.com',
-          password: 'newpassword',
-        )).email,
+        (await api.signIn(email: 'jane@example.com', password: 'oldpassword'))
+            .email,
         'jane@example.com',
-      );
-
-      expect(
-        () => api.resetPassword(
-          email: 'ghost@example.com',
-          password: 'whatever12',
-        ),
-        throwsA(isA<AuthError>()),
       );
     },
   );

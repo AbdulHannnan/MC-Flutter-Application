@@ -33,7 +33,9 @@ If you skip this, the app still boots on the built-in defaults (below) — the
 | `API_BASE_URL` | URL | `http://localhost:5050` | Base URL of the **legacy Express booking backend**. The migration fallback — each path moves to Supabase one proven module at a time. Never MySQL (3306), never the CRM (4000). |
 | `SUPABASE_URL` | URL | *(empty)* | **Supabase** project URL (`https://<ref>.supabase.co`). Target of the migrated customer auth / catalog / booking-write and technician paths (Edge Functions at `<SUPABASE_URL>/functions/v1/<fn>`). Empty ⇒ Supabase is skipped and the app runs on the Express/mock fallbacks. |
 | `SUPABASE_ANON_KEY` | string | *(empty)* | Supabase **anon/public** key. **Frontend-safe by design** — it only identifies the project at the API gateway; Row-Level Security guards the data. Treat it like `API_BASE_URL`, not a secret. **Never** the `service_role` key. |
-| `CATALOG_MODE` | `live` \| `mock` | `live` | `live` = `GET /api/services` + `/api/addons`; `mock` = in-repo seed data. |
+| `CATALOG_MODE` | `live` \| `mock` | `live` | `live` = the real catalog backend; `mock` = in-repo seed data. |
+| `CATALOG_BACKEND` | `express` \| `supabase` | `express` | *(migration)* Which backend serves a **live** catalog: `express` (`GET /api/services` + `/api/addons`) or `supabase` (supabase-js reads of `Service`/`Addon`, RLS-guarded). Only takes effect when Supabase is configured. |
+| `AUTH_BACKEND` | `mock` \| `supabase` | `mock` | *(migration)* Customer auth source: `mock` (local, dev-only) or `supabase` (real Supabase Auth email/password). Only takes effect when Supabase is configured. |
 | `BOOKINGS_MODE` | `live` \| `mock` | `live` | `live` = `POST /api/bookings/draft`; `mock` = local storage. |
 | `PAYMENTS_MODE` | `mock` \| `live` | `mock` | `mock` = in-repo N-Genius mock; `live` = real SDK + merchant server. |
 | `NGENIUS_ENV` | `sandbox` \| `production` | `sandbox` | Which N-Genius environment the `live` payments path targets. |

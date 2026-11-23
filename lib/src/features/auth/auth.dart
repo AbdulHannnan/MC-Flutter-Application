@@ -23,11 +23,13 @@ export 'auth_validation.dart'
         kMinPasswordLength,
         SignUpErrors,
         LoginErrors,
-        ResetPasswordErrors,
+        ResetRequestErrors,
         validateSignUp,
         validateLogin,
-        validateResetPassword;
+        validateResetRequest;
+export 'customer_auth_api.dart' show CustomerAuthApi;
 export 'mock_auth_api.dart'
     show MockAuthApi, AuthError, mockAuthApiProvider, kMockAuthLatency;
 export 'session_controller.dart'
-    show SessionController, sessionProvider, SessionX;
+    show SessionController, sessionProvider, SessionX, customerAuthApiProvider;
+export 'supabase_auth_api.dart' show SupabaseAuthApi;

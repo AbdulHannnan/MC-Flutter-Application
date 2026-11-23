@@ -118,26 +118,20 @@ LoginErrors validateLogin({
 
 // ── Password reset ─────────────────────────────────────────────────────────────
 
-/// Field → error for the reset-password form. A null field is valid.
-class ResetPasswordErrors {
+/// Field → error for the reset-request form. A null field is valid.
+class ResetRequestErrors {
   final String? email;
-  final String? password;
-  final String? confirmPassword;
 
-  const ResetPasswordErrors({this.email, this.password, this.confirmPassword});
+  const ResetRequestErrors({this.email});
 
-  bool get hasErrors =>
-      email != null || password != null || confirmPassword != null;
+  bool get hasErrors => email != null;
 }
 
-/// A SINGLE step (the mock backend has no email/code): the account email plus a
-/// NEW password. We enforce the min length here because the user is choosing a
-/// fresh password (same rule as signup) and confirm they typed it the same twice.
-ResetPasswordErrors validateResetPassword({
-  required String email,
-  required String password,
-  required String confirmPassword,
-}) {
+/// The password reset is EMAIL-ONLY: the user enters the account email and the
+/// backend sends a recovery link they complete outside the app (Supabase Auth
+/// cannot set a new password inline from the client). So we only check the email
+/// is present and plausible — no new-password fields here.
+ResetRequestErrors validateResetRequest({required String email}) {
   String? emailError;
   final trimmedEmail = email.trim();
   if (trimmedEmail.isEmpty) {
@@ -145,24 +139,5 @@ ResetPasswordErrors validateResetPassword({
   } else if (!_isValidEmail(trimmedEmail)) {
     emailError = 'Enter a valid email address.';
   }
-
-  String? passwordError;
-  if (password.isEmpty) {
-    passwordError = 'Please choose a new password.';
-  } else if (password.length < kMinPasswordLength) {
-    passwordError = 'Password must be at least $kMinPasswordLength characters.';
-  }
-
-  String? confirmError;
-  if (confirmPassword.isEmpty) {
-    confirmError = 'Please re-enter your new password.';
-  } else if (password != confirmPassword) {
-    confirmError = 'Passwords do not match.';
-  }
-
-  return ResetPasswordErrors(
-    email: emailError,
-    password: passwordError,
-    confirmPassword: confirmError,
-  );
+  return ResetRequestErrors(email: emailError);
 }

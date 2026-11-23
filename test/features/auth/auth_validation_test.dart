@@ -58,24 +58,16 @@ void main() {
     });
   });
 
-  group('validateResetPassword', () {
-    test('accepts email + matching min-length new password', () {
-      final e = validateResetPassword(
-        email: 'jane@example.com',
-        password: 'brandnew1',
-        confirmPassword: 'brandnew1',
-      );
+  group('validateResetRequest', () {
+    test('accepts a plausible email (email-only reset)', () {
+      final e = validateResetRequest(email: 'jane@example.com');
       expect(e.hasErrors, isFalse);
     });
 
-    test('enforces the min length and the confirm match', () {
-      final e = validateResetPassword(
-        email: 'jane@example.com',
-        password: 'tiny',
-        confirmPassword: 'nope',
-      );
-      expect(e.password, contains('$kMinPasswordLength'));
-      expect(e.confirmPassword, 'Passwords do not match.');
+    test('requires the email and rejects a malformed one', () {
+      expect(validateResetRequest(email: '').email, 'Please enter your email.');
+      expect(validateResetRequest(email: 'jane@').email,
+          'Enter a valid email address.');
     });
   });
 }
