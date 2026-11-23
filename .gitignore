@@ -99,3 +99,6 @@ ios/Flutter/ephemeral/
 # Editor / tooling local state
 .claude/settings.local.json
 .vscode/settings.json
+
+# Supabase CLI local state (linked from this dir; not part of the Flutter app)
+/supabase/
