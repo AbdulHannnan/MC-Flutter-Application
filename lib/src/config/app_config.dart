@@ -46,6 +46,17 @@ enum NgeniusEnv { sandbox, production }
 
 const String _apiBaseUrlRaw =
     String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:5050');
+
+// Supabase (the migrated backend): project URL + anon/public key. The anon key is
+// FRONTEND-SAFE by design — it only identifies the project at the API gateway;
+// Row-Level Security guards the data (rule #7 still holds: no service_role key, no
+// DB credentials). So these are treated like [_apiBaseUrlRaw] (a plain config
+// value), NOT a secret. Empty by default so a build with no Supabase config still
+// boots on the Express/mock paths (foundation module introduces the seam only).
+const String _supabaseUrlRaw =
+    String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+const String _supabaseAnonKeyRaw =
+    String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
 const String _appEnvRaw =
     String.fromEnvironment('APP_ENV', defaultValue: 'development');
 const String _catalogModeRaw =
@@ -114,8 +125,19 @@ class AppConfig {
   /// Which environment this build represents.
   final AppEnv appEnv;
 
-  /// Base URL of the booking backend (talk ONLY to this over HTTP — rule #7).
+  /// Base URL of the legacy Express booking backend (the fallback transport while
+  /// each path is migrated to Supabase, one proven module at a time).
   final String apiBaseUrl;
+
+  /// Supabase project URL (e.g. `https://<ref>.supabase.co`). Empty until
+  /// configured; the migrated customer auth / catalog / booking-write and
+  /// technician paths target this (`$supabaseUrl/functions/v1/<fn>` for Edge
+  /// Functions, and supabase-js reads for the catalog).
+  final String supabaseUrl;
+
+  /// Supabase anon/public key — frontend-safe (RLS guards the data). Sent as the
+  /// `apikey`/Bearer on Supabase calls. Empty until configured.
+  final String supabaseAnonKey;
 
   final CatalogConfig catalog;
   final BookingsConfig bookings;
@@ -125,6 +147,8 @@ class AppConfig {
   const AppConfig({
     required this.appEnv,
     required this.apiBaseUrl,
+    required this.supabaseUrl,
+    required this.supabaseAnonKey,
     required this.catalog,
     required this.bookings,
     required this.payments,
@@ -139,11 +163,21 @@ class AppConfig {
   bool get isMockPayments => payments.mode == PaymentsMode.mock;
   bool get isMockPush => push.mode == PushMode.mock;
 
+  /// Whether a usable Supabase URL + anon key are present. The migrated paths
+  /// require this; until it's true the app stays on the Express/mock fallbacks.
+  bool get isSupabaseConfigured =>
+      supabaseUrl.trim().isNotEmpty && supabaseAnonKey.trim().isNotEmpty;
+
   /// A human-readable dump of the resolved config — used by the boot screen and
-  /// logs to PROVE what the running build actually loaded.
+  /// logs to PROVE what the running build actually loaded. The anon key is only
+  /// reported as present/absent (not printed), to keep logs tidy — it's not a
+  /// secret, just noise.
   String describe() => [
         'appEnv        : ${appEnv.name}',
         'apiBaseUrl    : $apiBaseUrl',
+        'supabaseUrl   : ${supabaseUrl.isEmpty ? '(unset)' : supabaseUrl}',
+        'supabaseKey   : ${supabaseAnonKey.isEmpty ? '(unset)' : 'present'}',
+        'supabaseReady : $isSupabaseConfigured',
         'catalog.mode  : ${catalog.mode.name}',
         'bookings.mode : ${bookings.mode.name}',
         'payments.mode : ${payments.mode.name}',
@@ -156,6 +190,8 @@ class AppConfig {
 const AppConfig config = AppConfig(
   appEnv: _appEnv,
   apiBaseUrl: _apiBaseUrlRaw,
+  supabaseUrl: _supabaseUrlRaw,
+  supabaseAnonKey: _supabaseAnonKeyRaw,
   catalog: CatalogConfig(mode: _catalogMode),
   bookings: BookingsConfig(mode: _bookingsMode),
   payments: PaymentsConfig(mode: _paymentsMode, ngeniusEnv: _ngeniusEnv),

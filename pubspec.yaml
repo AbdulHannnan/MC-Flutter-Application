@@ -50,6 +50,7 @@ dependencies:
   # technician request. v11+ ships Swift Package Manager support, so it integrates
   # in this CocoaPods-free iOS setup (unlike 9.x, which was podspec-only).
   flutter_secure_storage: ^11.2.0
+  supabase_flutter: ^2.18.3
 
 dev_dependencies:
   flutter_test:

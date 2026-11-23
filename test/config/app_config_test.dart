@@ -30,11 +30,22 @@ void main() {
       expect(isApiBaseUrlValid, isTrue);
     });
 
-    test('describe() lists every key', () {
+    test('supabase is unconfigured by default (no --dart-define)', () {
+      // With no SUPABASE_URL / SUPABASE_ANON_KEY passed, the app stays on the
+      // Express/mock fallbacks and never initialises Supabase.
+      expect(config.supabaseUrl, isEmpty);
+      expect(config.supabaseAnonKey, isEmpty);
+      expect(config.isSupabaseConfigured, isFalse);
+    });
+
+    test('describe() lists every key and never prints the anon key', () {
       final text = config.describe();
       for (final key in const [
         'appEnv',
         'apiBaseUrl',
+        'supabaseUrl',
+        'supabaseKey',
+        'supabaseReady',
         'catalog.mode',
         'bookings.mode',
         'payments.mode',
@@ -43,6 +54,8 @@ void main() {
       ]) {
         expect(text, contains(key));
       }
+      // The key value is only ever reported as present/absent, never printed.
+      expect(text, contains('supabaseKey   : (unset)'));
     });
   });
 }

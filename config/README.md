@@ -30,7 +30,9 @@ If you skip this, the app still boots on the built-in defaults (below) — the
 | Key | Values | Default | Meaning |
 |---|---|---|---|
 | `APP_ENV` | `development` \| `preview` \| `production` | `development` | Which environment this build represents. |
-| `API_BASE_URL` | URL | `http://localhost:5050` | Base URL of the **booking backend**. The app talks ONLY to this over HTTP — never MySQL (3306), never the CRM (4000). |
+| `API_BASE_URL` | URL | `http://localhost:5050` | Base URL of the **legacy Express booking backend**. The migration fallback — each path moves to Supabase one proven module at a time. Never MySQL (3306), never the CRM (4000). |
+| `SUPABASE_URL` | URL | *(empty)* | **Supabase** project URL (`https://<ref>.supabase.co`). Target of the migrated customer auth / catalog / booking-write and technician paths (Edge Functions at `<SUPABASE_URL>/functions/v1/<fn>`). Empty ⇒ Supabase is skipped and the app runs on the Express/mock fallbacks. |
+| `SUPABASE_ANON_KEY` | string | *(empty)* | Supabase **anon/public** key. **Frontend-safe by design** — it only identifies the project at the API gateway; Row-Level Security guards the data. Treat it like `API_BASE_URL`, not a secret. **Never** the `service_role` key. |
 | `CATALOG_MODE` | `live` \| `mock` | `live` | `live` = `GET /api/services` + `/api/addons`; `mock` = in-repo seed data. |
 | `BOOKINGS_MODE` | `live` \| `mock` | `live` | `live` = `POST /api/bookings/draft`; `mock` = local storage. |
 | `PAYMENTS_MODE` | `mock` \| `live` | `mock` | `mock` = in-repo N-Genius mock; `live` = real SDK + merchant server. |
@@ -42,9 +44,11 @@ Any value other than the exact expected token falls back to the **safe** value
 data source.
 
 > **Server-side-only secrets** (rule #7) — do **not** put these here or ship them
-> to the device: `NGENIUS_API_KEY`, `NGENIUS_OUTLET_REF`, `NGENIUS_REALM`,
-> `NGENIUS_WEBHOOK_SECRET`, email/CRM provider keys. They live on the merchant
-> backend, not in the app.
+> to the device: the Supabase **`service_role`** key, `NGENIUS_API_KEY`,
+> `NGENIUS_OUTLET_REF`, `NGENIUS_REALM`, `NGENIUS_WEBHOOK_SECRET`, email/CRM
+> provider keys. They live on the server (Edge Functions / merchant backend), not
+> in the app. (The Supabase **anon** key above is the public exception — it's
+> meant to ship to clients.)
 
 ## Reaching the backend (port **5050**)
 

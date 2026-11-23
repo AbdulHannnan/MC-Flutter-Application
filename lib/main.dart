@@ -17,17 +17,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'src/app/app_router.dart';
 import 'src/config/app_config.dart';
+import 'src/core/network/supabase_client.dart';
 import 'src/core/theme/theme.dart';
 
-void main() {
+Future<void> main() async {
+  // Binding must be ready before the async Supabase init below runs ahead of
+  // runApp.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Bring up the Supabase client (customer auth / catalog / Edge Functions)
+  // before the app renders. A no-op when Supabase isn't configured, so the app
+  // still boots on the Express/mock fallbacks — nothing is re-pointed at Supabase
+  // in this foundation module.
+  final supabaseReady = await initSupabase();
+
   // Log the resolved config once at startup — a fast way to confirm which
-  // API URL and flags this build actually loaded.
+  // backend(s) and flags this build actually loaded.
   if (kDebugMode) {
     debugPrint('[config] resolved:\n${config.describe()}');
     if (!isApiBaseUrlValid) {
       debugPrint('[config] WARNING: API_BASE_URL is empty. '
           'Pass --dart-define-from-file=config/dev.json');
     }
+    debugPrint('[supabase] initialised: $supabaseReady'
+        '${config.isSupabaseConfigured ? '' : ' (not configured — add '
+            'SUPABASE_URL + SUPABASE_ANON_KEY to config/dev.json)'}');
   }
   runApp(const ProviderScope(child: MicrocareApp()));
 }
