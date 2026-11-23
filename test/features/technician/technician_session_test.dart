@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/src/core/network/api_exception.dart';
 import 'package:microcare/src/features/technician/data/technician.dart';
 import 'package:microcare/src/features/technician/data/technician_api.dart';
+import 'package:microcare/src/features/technician/data/technician_job.dart';
 import 'package:microcare/src/features/technician/data/technician_token_store.dart';
 import 'package:microcare/src/features/technician/technician_session.dart';
 
@@ -36,6 +37,12 @@ class _FakeTechApi implements TechnicianApi {
 
   @override
   Future<Technician> me() async => _sami;
+
+  @override
+  Future<List<TechnicianJob>> jobs({String? status}) async => const [];
+
+  @override
+  Future<TechnicianJob> job(String id) async => throw UnimplementedError();
 }
 
 ProviderContainer _container(InMemoryTechnicianTokenStore store) {

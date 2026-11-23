@@ -94,4 +94,48 @@ void main() {
       throwsA(isA<ApiException>()),
     );
   });
+
+  test('jobs GETs /technician/jobs with apikey + bearer, parses the list', () async {
+    final adapter = _FakeAdapter((o) => _json({
+          'data': [
+            {
+              'id': 'bk_1',
+              'reference': 'MC-0001AH',
+              'jobStatus': 'ASSIGNED',
+              'service': {'id': 'svc_1', 'name': 'Split AC'},
+            },
+          ],
+        }));
+    final jobs = await _api(adapter, token: 'jwt.sami').jobs();
+
+    final req = adapter.lastRequest!;
+    expect(req.method, 'GET');
+    expect(req.uri.path, '/functions/v1/technician/jobs');
+    expect(req.headers.containsKey('apikey'), isTrue);
+    expect(req.headers['Authorization'], 'Bearer jwt.sami');
+    expect(jobs, hasLength(1));
+    expect(jobs.first.reference, 'MC-0001AH');
+  });
+
+  test('jobs passes an optional ?status= filter', () async {
+    final adapter = _FakeAdapter((o) => _json({'data': []}));
+    await _api(adapter, token: 'jwt.sami').jobs(status: 'ASSIGNED');
+    expect(adapter.lastRequest!.uri.queryParameters['status'], 'ASSIGNED');
+  });
+
+  test('job GETs /technician/jobs/:id and parses the detail', () async {
+    final adapter = _FakeAdapter((o) => _json({
+          'data': {
+            'id': 'bk_1',
+            'jobStatus': 'ACKNOWLEDGED',
+            'total': '135.00',
+            'service': {'id': 'svc_1', 'name': 'Split AC'},
+          },
+        }));
+    final job = await _api(adapter, token: 'jwt.sami').job('bk_1');
+
+    expect(adapter.lastRequest!.uri.path, '/functions/v1/technician/jobs/bk_1');
+    expect(job.id, 'bk_1');
+    expect(job.total!.amountMinor, 13500);
+  });
 }

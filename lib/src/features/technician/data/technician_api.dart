@@ -20,6 +20,7 @@ import '../../../config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import 'supabase_technician_api.dart';
 import 'technician.dart';
+import 'technician_job.dart';
 import 'technician_token_store.dart';
 
 /// The result of a successful technician login: the JWT + the profile.
@@ -41,7 +42,18 @@ abstract interface class TechnicianApi {
 
   /// Validate the stored token and return the authenticated technician.
   Future<Technician> me();
+
+  /// The technician's job queue, soonest first. [status] optionally filters by a
+  /// [JobStatus] wire code (e.g. `ASSIGNED`). Scoped server-side to this token.
+  Future<List<TechnicianJob>> jobs({String? status});
+
+  /// One owned job's full detail. Throws [ApiException] 404 if it isn't theirs.
+  Future<TechnicianJob> job(String id);
 }
+
+/// Parse a jobs-list response body (a JSON array) — shared by both backends.
+List<TechnicianJob> parseJobs(List<dynamic> data) =>
+    data.map((e) => TechnicianJob.fromJson(e as Map<String, dynamic>)).toList();
 
 /// Parse a login response body (`{ token, technician }`) — shared by both backends.
 TechnicianLoginResult parseLoginResult(Map<String, dynamic> data) =>
@@ -53,6 +65,10 @@ TechnicianLoginResult parseLoginResult(Map<String, dynamic> data) =>
 /// Parse a me response body (`{ technician }`) — shared by both backends.
 Technician parseMeResult(Map<String, dynamic> data) =>
     Technician.fromJson(data['technician'] as Map<String, dynamic>);
+
+/// Build the optional `?status=` query for the jobs list.
+Map<String, dynamic>? jobsQuery(String? status) =>
+    (status != null && status.isNotEmpty) ? {'status': status} : null;
 
 /// Express implementation — the legacy `/api/technician/*` routes.
 class ExpressTechnicianApi implements TechnicianApi {
@@ -76,6 +92,22 @@ class ExpressTechnicianApi implements TechnicianApi {
   Future<Technician> me() async {
     final data = await _client.get<Map<String, dynamic>>('/api/technician/me');
     return parseMeResult(data);
+  }
+
+  @override
+  Future<List<TechnicianJob>> jobs({String? status}) async {
+    final data = await _client.get<List<dynamic>>(
+      '/api/technician/jobs',
+      query: jobsQuery(status),
+    );
+    return parseJobs(data);
+  }
+
+  @override
+  Future<TechnicianJob> job(String id) async {
+    final data =
+        await _client.get<Map<String, dynamic>>('/api/technician/jobs/$id');
+    return TechnicianJob.fromJson(data);
   }
 }
 

@@ -21,6 +21,7 @@ import '../../../config/app_config.dart';
 import '../../../core/network/api_client.dart';
 import 'technician.dart';
 import 'technician_api.dart';
+import 'technician_job.dart';
 import 'technician_token_store.dart';
 
 class SupabaseTechnicianApi implements TechnicianApi {
@@ -51,6 +52,25 @@ class SupabaseTechnicianApi implements TechnicianApi {
       headers: _gatewayHeaders,
     );
     return parseMeResult(data);
+  }
+
+  @override
+  Future<List<TechnicianJob>> jobs({String? status}) async {
+    final data = await _client.get<List<dynamic>>(
+      '/technician/jobs',
+      query: jobsQuery(status),
+      headers: _gatewayHeaders,
+    );
+    return parseJobs(data);
+  }
+
+  @override
+  Future<TechnicianJob> job(String id) async {
+    final data = await _client.get<Map<String, dynamic>>(
+      '/technician/jobs/$id',
+      headers: _gatewayHeaders,
+    );
+    return TechnicianJob.fromJson(data);
   }
 }
 

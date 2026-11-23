@@ -26,10 +26,17 @@ class AppRoutes {
   static const String technicianLogin = '/technician/login';
   static const String technicianHome = '/technician';
 
-  /// The technician-only route paths (require a signed-in technician), as a set —
-  /// used by the guard to keep customers out and route technicians in. NOTE:
-  /// [technicianLogin] is NOT here — it's a public auth route (see [authRoutes]).
-  static const Set<String> technicianRoutes = {technicianHome};
+  /// Technician job detail — `:id` is the booking/job id. Build with [technicianJobOf].
+  static const String technicianJob = '/technician/jobs/:id';
+  static String technicianJobOf(String id) => '/technician/jobs/$id';
+
+  /// Whether [location] is inside the technician (staff) area — the home or any
+  /// `/technician/...` sub-route (jobs, detail), but NOT the public
+  /// [technicianLogin]. Used by the guard to admit a signed-in technician and keep
+  /// customers out, including the `:id` detail routes a static set can't match.
+  static bool isTechnicianArea(String location) =>
+      location != technicianLogin &&
+      (location == technicianHome || location.startsWith('$technicianHome/'));
   static const String categories = '/categories';
   static const String search = '/search';
   static const String cart = '/cart';

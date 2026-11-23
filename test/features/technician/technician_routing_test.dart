@@ -16,6 +16,8 @@ import 'package:microcare/src/app/app_router.dart';
 import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/features/auth/mock_auth_api.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
+import 'package:microcare/src/features/technician/data/technician_api.dart';
+import 'package:microcare/src/features/technician/data/technician_job.dart';
 import 'package:microcare/src/features/technician/screens/technician_home_screen.dart';
 import 'package:microcare/src/features/technician/screens/technician_login_screen.dart';
 import 'package:microcare/src/features/technician/technician.dart';
@@ -54,6 +56,26 @@ const _sami = Technician(
   phone: null,
 );
 
+/// A fake technician API so the staff home renders deterministically (empty
+/// queue) without touching the network — the routing test is about the GUARD.
+class _FakeTechApi implements TechnicianApi {
+  @override
+  Future<TechnicianLoginResult> login({
+    required String username,
+    required String password,
+  }) async =>
+      const TechnicianLoginResult(token: 'jwt.abc', technician: _sami);
+
+  @override
+  Future<Technician> me() async => _sami;
+
+  @override
+  Future<List<TechnicianJob>> jobs({String? status}) async => const [];
+
+  @override
+  Future<TechnicianJob> job(String id) async => throw UnimplementedError();
+}
+
 Widget _app({TechnicianTokenStore? techStore}) => ProviderScope(
       overrides: [
         skipWelcomeSplash,
@@ -69,6 +91,8 @@ Widget _app({TechnicianTokenStore? techStore}) => ProviderScope(
         // Always stub the keystore — an empty fake = signed-out technician.
         technicianTokenStoreProvider
             .overrideWithValue(techStore ?? _FakeTechStore()),
+        // Fake the jobs API so the staff home's queue fetch stays offline.
+        technicianApiProvider.overrideWithValue(_FakeTechApi()),
       ],
       child: const MicrocareApp(),
     );
@@ -93,7 +117,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TechnicianHomeScreen), findsOneWidget);
-    expect(find.text('Your work area'), findsOneWidget);
+    expect(find.text('Nothing to do right now'), findsOneWidget); // empty queue
     expect(find.text('Hi Sami 👋'), findsOneWidget);
 
     // Deep-linking into the customer app bounces back to the staff area.

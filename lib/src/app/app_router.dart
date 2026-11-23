@@ -43,6 +43,7 @@ import '../features/services/screens/category_services_screen.dart';
 import '../features/services/screens/search_screen.dart';
 import '../features/services/screens/service_detail_screen.dart';
 import '../features/technician/screens/technician_home_screen.dart';
+import '../features/technician/screens/technician_job_detail_screen.dart';
 import '../features/technician/screens/technician_login_screen.dart';
 import '../features/technician/technician.dart';
 import 'app_routes.dart';
@@ -110,6 +111,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.technicianHome,
         builder: (context, state) => const TechnicianHomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.technicianJob,
+        builder: (context, state) =>
+            TechnicianJobDetailScreen(jobId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoutes.categories,
@@ -207,7 +213,7 @@ String? _authGuard(Ref ref, GoRouterState state) {
   }
 
   final onAuthRoute = AppRoutes.authRoutes.contains(location);
-  final onTechnicianRoute = AppRoutes.technicianRoutes.contains(location);
+  final onTechnicianRoute = AppRoutes.isTechnicianArea(location);
 
   // Technician signed in → only the staff area is reachable (auth routes, the
   // splash, and the whole customer app bounce to the tech home).
