@@ -24,7 +24,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_config.dart';
 import '../../core/format/date_time.dart';
 import '../../core/network/api_client.dart';
+import '../../core/network/supabase_client.dart';
 import '../../models/models.dart';
+import 'supabase_bookings_api.dart';
 
 /// The payer's contact, sent to the backend with each booking (never the userId).
 class Customer {
@@ -116,8 +118,17 @@ class MockBookingsApi implements BookingsApi {
   }
 }
 
-/// The single [BookingsApi] the checkout reads. Live unless BOOKINGS_MODE=mock.
+/// The single [BookingsApi] the checkout reads. Chosen by the build's flags, with
+/// Express as the proven fallback:
+///   • `BOOKINGS_MODE=mock`               → local mock (no server).
+///   • live + `BOOKINGS_BACKEND=supabase` → [SupabaseBookingsApi] (create-draft →
+///                                          finalize-booking; needs a Supabase
+///                                          session — see config.isSupabaseBookings).
+///   • live (default)                     → Express `POST /api/bookings/draft`.
 final bookingsApiProvider = Provider<BookingsApi>((ref) {
   if (config.isMockBookings) return MockBookingsApi();
+  if (config.isSupabaseBookings) {
+    return SupabaseBookingsApi(ref.watch(supabaseClientProvider));
+  }
   return LiveBookingsApi(ref.read(apiClientProvider));
 });

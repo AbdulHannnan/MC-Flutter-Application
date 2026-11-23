@@ -36,7 +36,8 @@ If you skip this, the app still boots on the built-in defaults (below) — the
 | `CATALOG_MODE` | `live` \| `mock` | `live` | `live` = the real catalog backend; `mock` = in-repo seed data. |
 | `CATALOG_BACKEND` | `express` \| `supabase` | `express` | *(migration)* Which backend serves a **live** catalog: `express` (`GET /api/services` + `/api/addons`) or `supabase` (supabase-js reads of `Service`/`Addon`, RLS-guarded). Only takes effect when Supabase is configured. |
 | `AUTH_BACKEND` | `mock` \| `supabase` | `mock` | *(migration)* Customer auth source: `mock` (local, dev-only) or `supabase` (real Supabase Auth email/password). Only takes effect when Supabase is configured. |
-| `BOOKINGS_MODE` | `live` \| `mock` | `live` | `live` = `POST /api/bookings/draft`; `mock` = local storage. |
+| `BOOKINGS_MODE` | `live` \| `mock` | `live` | `live` = a real booking backend; `mock` = local storage. |
+| `BOOKINGS_BACKEND` | `express` \| `supabase` | `express` | *(migration)* Which backend receives a **live** booking: `express` (`POST /api/bookings/draft`) or `supabase` (create-draft → finalize-booking Edge Functions). **Pair with `AUTH_BACKEND=supabase`** — finalize-booking requires a signed-in Supabase session. Only takes effect when Supabase is configured. |
 | `PAYMENTS_MODE` | `mock` \| `live` | `mock` | `mock` = in-repo N-Genius mock; `live` = real SDK + merchant server. |
 | `NGENIUS_ENV` | `sandbox` \| `production` | `sandbox` | Which N-Genius environment the `live` payments path targets. |
 | `PUSH_MODE` | `mock` \| `live` | `mock` | `mock` = local notifications only; `live` = attempt remote push token. |

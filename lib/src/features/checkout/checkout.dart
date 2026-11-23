@@ -18,3 +18,9 @@ export 'checkout_validation.dart' show CheckoutErrors, validateCheckout;
 export 'notifications.dart'
     show NotificationsService, notificationsServiceProvider;
 export 'payment_api.dart' show PaymentApi, PaymentResult, paymentApiProvider;
+export 'supabase_bookings_api.dart'
+    show
+        SupabaseBookingsApi,
+        BookingSubmitException,
+        buildCreateDraftBody,
+        buildFinalizeBody;

@@ -78,6 +78,8 @@ const String _bookingsModeRaw =
 // (the proven fallback); set to `supabase` once that path is verified on-device.
 const String _catalogBackendRaw =
     String.fromEnvironment('CATALOG_BACKEND', defaultValue: 'express');
+const String _bookingsBackendRaw =
+    String.fromEnvironment('BOOKINGS_BACKEND', defaultValue: 'express');
 // Customer auth source. Default `mock` (the proven local fallback); set to
 // `supabase` once real Supabase Auth is verified on-device.
 const String _authBackendRaw =
@@ -107,6 +109,8 @@ const DataMode _bookingsMode =
 // so a typo can never silently point a live path at the wrong backend.
 const Backend _catalogBackend =
     _catalogBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
+const Backend _bookingsBackend =
+    _bookingsBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
 // Anything other than exactly "supabase" resolves to mock (the safe fallback).
 const AuthBackend _authBackend =
     _authBackendRaw == 'supabase' ? AuthBackend.supabase : AuthBackend.mock;
@@ -132,11 +136,17 @@ class CatalogConfig {
   const CatalogConfig({required this.mode, this.backend = Backend.express});
 }
 
-/// Bookings destination: where a submitted booking draft goes.
+/// Bookings destination: where a submitted booking goes.
 class BookingsConfig {
-  /// [DataMode.live] = `POST /api/bookings/draft`; [DataMode.mock] = local storage.
+  /// [DataMode.live] = a real booking backend; [DataMode.mock] = local storage.
   final DataMode mode;
-  const BookingsConfig({required this.mode});
+
+  /// When [mode] is live, which backend receives the booking: [Backend.express]
+  /// (`POST /api/bookings/draft`) or [Backend.supabase] (the create-draft →
+  /// finalize-booking Edge Functions). Ignored when mock.
+  final Backend backend;
+
+  const BookingsConfig({required this.mode, this.backend = Backend.express});
 }
 
 /// Payments: which implementation runs and, for `live`, which N-Genius env.
@@ -209,6 +219,15 @@ class AppConfig {
   bool get isSupabaseAuth =>
       authBackend == AuthBackend.supabase && isSupabaseConfigured;
   bool get isMockBookings => bookings.mode == DataMode.mock;
+
+  /// True when booking writes should go to the Supabase Edge Functions: a live
+  /// bookings path whose backend is Supabase AND Supabase is configured. Falls
+  /// back to Express otherwise. NOTE: the Supabase path's finalize step requires a
+  /// signed-in Supabase session, so pair it with `AUTH_BACKEND=supabase`.
+  bool get isSupabaseBookings =>
+      bookings.mode == DataMode.live &&
+      bookings.backend == Backend.supabase &&
+      isSupabaseConfigured;
   bool get isMockPayments => payments.mode == PaymentsMode.mock;
   bool get isMockPush => push.mode == PushMode.mock;
 
@@ -231,6 +250,7 @@ class AppConfig {
         'catalog.mode  : ${catalog.mode.name}',
         'catalog.backend: ${catalog.backend.name}${isSupabaseCatalog ? ' (active)' : ''}',
         'bookings.mode : ${bookings.mode.name}',
+        'bookings.backend: ${bookings.backend.name}${isSupabaseBookings ? ' (active)' : ''}',
         'payments.mode : ${payments.mode.name}',
         'ngeniusEnv    : ${payments.ngeniusEnv.name}',
         'push.mode     : ${push.mode.name}',
@@ -245,7 +265,7 @@ const AppConfig config = AppConfig(
   supabaseAnonKey: _supabaseAnonKeyRaw,
   authBackend: _authBackend,
   catalog: CatalogConfig(mode: _catalogMode, backend: _catalogBackend),
-  bookings: BookingsConfig(mode: _bookingsMode),
+  bookings: BookingsConfig(mode: _bookingsMode, backend: _bookingsBackend),
   payments: PaymentsConfig(mode: _paymentsMode, ngeniusEnv: _ngeniusEnv),
   push: PushConfig(mode: _pushMode),
 );

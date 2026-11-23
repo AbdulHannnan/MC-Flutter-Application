@@ -50,6 +50,11 @@ void main() {
       expect(config.isSupabaseAuth, isFalse);
     });
 
+    test('bookings backend defaults to Express (the proven fallback)', () {
+      expect(config.bookings.backend, Backend.express);
+      expect(config.isSupabaseBookings, isFalse);
+    });
+
     test('describe() lists every key and never prints the anon key', () {
       final text = config.describe();
       for (final key in const [
@@ -62,6 +67,7 @@ void main() {
         'catalog.mode',
         'catalog.backend',
         'bookings.mode',
+        'bookings.backend',
         'payments.mode',
         'ngeniusEnv',
         'push.mode',
