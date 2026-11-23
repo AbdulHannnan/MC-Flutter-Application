@@ -55,6 +55,11 @@ void main() {
       expect(config.isSupabaseBookings, isFalse);
     });
 
+    test('technician backend defaults to Express (the proven fallback)', () {
+      expect(config.technicianBackend, Backend.express);
+      expect(config.isSupabaseTechnician, isFalse);
+    });
+
     test('describe() lists every key and never prints the anon key', () {
       final text = config.describe();
       for (final key in const [
@@ -64,6 +69,7 @@ void main() {
         'supabaseKey',
         'supabaseReady',
         'authBackend',
+        'techBackend',
         'catalog.mode',
         'catalog.backend',
         'bookings.mode',

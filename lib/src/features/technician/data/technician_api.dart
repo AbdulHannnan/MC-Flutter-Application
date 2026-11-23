@@ -1,17 +1,24 @@
 // lib/src/features/technician/data/technician_api.dart — the technician HTTP
-// layer: an AUTHORIZED ApiClient (sends the stored JWT as a Bearer header on
-// every call) plus the typed technician endpoints.
+// layer: the typed login + me endpoints, over an AUTHORIZED ApiClient (sends the
+// stored technician JWT as a Bearer header on every call).
 //
 // Separate ApiClient instance from the customer `apiClientProvider` so the bearer
-// token is attached ONLY to technician requests — the public catalog calls stay
-// unauthenticated. The token is resolved fresh per request from secure storage,
-// so a login or logout takes effect on the very next call with no rewiring.
-//
-// Module 1 covers auth (login + me); the job/photo endpoints land in Modules 2–5.
+// token is attached ONLY to technician requests. The technician auth is a PARALLEL
+// custom JWT (not a Supabase session), the same on both backends:
+//   • Express  → `/api/technician/*` on the legacy server.
+//   • Supabase → the `technician` Edge Function (`/functions/v1/technician/*`,
+//                deployed verify_jwt=false so the custom JWT reaches it), with the
+//                anon `apikey` as the gateway credential — see SupabaseTechnicianApi.
+// The response shapes are IDENTICAL across both (confirmed from the deployed
+// function): login → { token, technician{id,code,name,username,phone} }, me →
+// { technician }. So the parsing is shared; only the base URL + paths + headers
+// differ, chosen by `TECHNICIAN_BACKEND`.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/app_config.dart';
 import '../../../core/network/api_client.dart';
+import 'supabase_technician_api.dart';
 import 'technician.dart';
 import 'technician_token_store.dart';
 
@@ -22,14 +29,38 @@ class TechnicianLoginResult {
   const TechnicianLoginResult({required this.token, required this.technician});
 }
 
-/// Thin typed client over the backend's `/api/technician/*` routes.
-class TechnicianApi {
-  TechnicianApi(this._client);
+/// The technician auth contract the session layer depends on. Implemented by
+/// [ExpressTechnicianApi] and [SupabaseTechnicianApi].
+abstract interface class TechnicianApi {
+  /// Authenticate with username + password → the JWT + profile. Throws
+  /// [ApiException] (401 generic message) on bad credentials.
+  Future<TechnicianLoginResult> login({
+    required String username,
+    required String password,
+  });
+
+  /// Validate the stored token and return the authenticated technician.
+  Future<Technician> me();
+}
+
+/// Parse a login response body (`{ token, technician }`) — shared by both backends.
+TechnicianLoginResult parseLoginResult(Map<String, dynamic> data) =>
+    TechnicianLoginResult(
+      token: data['token'] as String,
+      technician: Technician.fromJson(data['technician'] as Map<String, dynamic>),
+    );
+
+/// Parse a me response body (`{ technician }`) — shared by both backends.
+Technician parseMeResult(Map<String, dynamic> data) =>
+    Technician.fromJson(data['technician'] as Map<String, dynamic>);
+
+/// Express implementation — the legacy `/api/technician/*` routes.
+class ExpressTechnicianApi implements TechnicianApi {
+  ExpressTechnicianApi(this._client);
 
   final ApiClient _client;
 
-  /// POST /api/technician/login → { token, technician }. Throws [ApiException]
-  /// (401 with a generic message) on bad credentials.
+  @override
   Future<TechnicianLoginResult> login({
     required String username,
     required String password,
@@ -38,23 +69,19 @@ class TechnicianApi {
       '/api/technician/login',
       body: {'username': username, 'password': password},
     );
-    return TechnicianLoginResult(
-      token: data['token'] as String,
-      technician:
-          Technician.fromJson(data['technician'] as Map<String, dynamic>),
-    );
+    return parseLoginResult(data);
   }
 
-  /// GET /api/technician/me → the authenticated technician (validates the token).
+  @override
   Future<Technician> me() async {
-    final data =
-        await _client.get<Map<String, dynamic>>('/api/technician/me');
-    return Technician.fromJson(data['technician'] as Map<String, dynamic>);
+    final data = await _client.get<Map<String, dynamic>>('/api/technician/me');
+    return parseMeResult(data);
   }
 }
 
-/// An [ApiClient] that attaches the stored technician JWT as an
-/// `Authorization: Bearer` header on every request (resolved fresh from storage).
+/// An [ApiClient] for the EXPRESS technician routes that attaches the stored
+/// technician JWT as an `Authorization: Bearer` header on every request (resolved
+/// fresh from storage, so login/logout take effect on the next call).
 final technicianApiClientProvider = Provider<ApiClient>((ref) {
   final store = ref.read(technicianTokenStoreProvider);
   final client = ApiClient() // base URL from the app config (no hardcoding)
@@ -62,7 +89,11 @@ final technicianApiClientProvider = Provider<ApiClient>((ref) {
   return client;
 });
 
-/// The single [TechnicianApi] the technician feature reads.
-final technicianApiProvider = Provider<TechnicianApi>(
-  (ref) => TechnicianApi(ref.read(technicianApiClientProvider)),
-);
+/// The single [TechnicianApi] the technician feature reads — Supabase when
+/// selected + configured, else the Express fallback.
+final technicianApiProvider = Provider<TechnicianApi>((ref) {
+  if (config.isSupabaseTechnician) {
+    return SupabaseTechnicianApi(ref.read(supabaseTechnicianApiClientProvider));
+  }
+  return ExpressTechnicianApi(ref.read(technicianApiClientProvider));
+});

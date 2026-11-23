@@ -5,7 +5,6 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/core/network/api_exception.dart';
 import 'package:microcare/src/features/technician/data/technician.dart';
 import 'package:microcare/src/features/technician/data/technician_api.dart';
@@ -23,9 +22,7 @@ const _sami = Technician(
 );
 
 /// A fake backend API: login succeeds only for the right password.
-class _FakeTechApi extends TechnicianApi {
-  _FakeTechApi() : super(ApiClient(baseUrl: 'http://test.local'));
-
+class _FakeTechApi implements TechnicianApi {
   @override
   Future<TechnicianLoginResult> login({
     required String username,

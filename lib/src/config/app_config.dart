@@ -80,6 +80,8 @@ const String _catalogBackendRaw =
     String.fromEnvironment('CATALOG_BACKEND', defaultValue: 'express');
 const String _bookingsBackendRaw =
     String.fromEnvironment('BOOKINGS_BACKEND', defaultValue: 'express');
+const String _technicianBackendRaw =
+    String.fromEnvironment('TECHNICIAN_BACKEND', defaultValue: 'express');
 // Customer auth source. Default `mock` (the proven local fallback); set to
 // `supabase` once real Supabase Auth is verified on-device.
 const String _authBackendRaw =
@@ -111,6 +113,8 @@ const Backend _catalogBackend =
     _catalogBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
 const Backend _bookingsBackend =
     _bookingsBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
+const Backend _technicianBackend =
+    _technicianBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
 // Anything other than exactly "supabase" resolves to mock (the safe fallback).
 const AuthBackend _authBackend =
     _authBackendRaw == 'supabase' ? AuthBackend.supabase : AuthBackend.mock;
@@ -184,6 +188,10 @@ class AppConfig {
   /// Where customer authentication runs (mock vs real Supabase Auth).
   final AuthBackend authBackend;
 
+  /// Which backend serves the technician (staff) auth + jobs: [Backend.express]
+  /// (`/api/technician/*`) or [Backend.supabase] (the `technician` Edge Function).
+  final Backend technicianBackend;
+
   final CatalogConfig catalog;
   final BookingsConfig bookings;
   final PaymentsConfig payments;
@@ -195,6 +203,7 @@ class AppConfig {
     required this.supabaseUrl,
     required this.supabaseAnonKey,
     required this.authBackend,
+    required this.technicianBackend,
     required this.catalog,
     required this.bookings,
     required this.payments,
@@ -218,6 +227,13 @@ class AppConfig {
   /// AND Supabase is configured. Falls back to the mock otherwise (safe default).
   bool get isSupabaseAuth =>
       authBackend == AuthBackend.supabase && isSupabaseConfigured;
+
+  /// True when the technician path should use the Supabase `technician` Edge
+  /// Function: the flag is supabase AND Supabase is configured. (The technician
+  /// auth is a parallel custom JWT — it does NOT need a customer Supabase session,
+  /// so this is independent of [isSupabaseAuth].) Falls back to Express otherwise.
+  bool get isSupabaseTechnician =>
+      technicianBackend == Backend.supabase && isSupabaseConfigured;
   bool get isMockBookings => bookings.mode == DataMode.mock;
 
   /// True when booking writes should go to the Supabase Edge Functions: a live
@@ -247,6 +263,7 @@ class AppConfig {
         'supabaseKey   : ${supabaseAnonKey.isEmpty ? '(unset)' : 'present'}',
         'supabaseReady : $isSupabaseConfigured',
         'authBackend   : ${authBackend.name}${isSupabaseAuth ? ' (active)' : ''}',
+        'techBackend   : ${technicianBackend.name}${isSupabaseTechnician ? ' (active)' : ''}',
         'catalog.mode  : ${catalog.mode.name}',
         'catalog.backend: ${catalog.backend.name}${isSupabaseCatalog ? ' (active)' : ''}',
         'bookings.mode : ${bookings.mode.name}',
@@ -264,6 +281,7 @@ const AppConfig config = AppConfig(
   supabaseUrl: _supabaseUrlRaw,
   supabaseAnonKey: _supabaseAnonKeyRaw,
   authBackend: _authBackend,
+  technicianBackend: _technicianBackend,
   catalog: CatalogConfig(mode: _catalogMode, backend: _catalogBackend),
   bookings: BookingsConfig(mode: _bookingsMode, backend: _bookingsBackend),
   payments: PaymentsConfig(mode: _paymentsMode, ngeniusEnv: _ngeniusEnv),
