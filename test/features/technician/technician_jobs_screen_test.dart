@@ -65,6 +65,12 @@ class _FakeTechApi implements TechnicianApi {
   @override
   Future<TechnicianJob> updateJobStatus(String id, JobStatus s) async =>
       _detailJob;
+  @override
+  Future<List<JobPhoto>> jobPhotos(String id) async => const [];
+  @override
+  Future<List<JobPhoto>> uploadPhotos(
+          String id, PhotoKind kind, List<PhotoUpload> files) async =>
+      const [];
 }
 
 Widget _app() => ProviderScope(
@@ -136,11 +142,49 @@ void main() {
     expect(find.text('Start job'), findsOneWidget);
     expect(find.text('Acknowledge job'), findsNothing);
 
-    // Start → IN_PROGRESS; the finish flow note replaces the button.
+    // Start → IN_PROGRESS; the finish action appears, gated on photos (none yet).
     await tester.tap(find.text('Start job'));
     await tester.pumpAndSettle();
     expect(api.status, JobStatus.inProgress);
-    expect(find.textContaining('coming soon'), findsOneWidget);
+    expect(find.text('Mark as done'), findsOneWidget);
+    expect(find.textContaining('before and one after'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('mark as done is enabled once before+after photos exist, then completes',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = _StatefulTechApi(
+      status: JobStatus.inProgress,
+      photos: const [
+        JobPhoto(id: 'p1', kind: PhotoKind.before, url: 'k1', signedUrl: 'https://x/1.jpg'),
+        JobPhoto(id: 'p2', kind: PhotoKind.after, url: 'k2', signedUrl: 'https://x/2.jpg'),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          skipWelcomeSplash,
+          technicianTokenStoreProvider.overrideWithValue(
+            InMemoryTechnicianTokenStore(token: 'jwt', technician: _sami),
+          ),
+          technicianApiProvider.overrideWithValue(api),
+        ],
+        child: const MicrocareApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Split AC Deep Cleaning'));
+    await tester.pumpAndSettle();
+
+    // Both photo kinds present → no gate hint, and Mark as done completes the job.
+    expect(find.textContaining('before and one after'), findsNothing);
+    await tester.tap(find.text('Mark as done'));
+    await tester.pumpAndSettle();
+    expect(api.status, JobStatus.done);
 
     await tester.pumpWidget(const SizedBox());
   });
@@ -172,9 +216,13 @@ class _EmptyTechApi extends _FakeTechApi {
   Future<List<TechnicianJob>> jobs({String? status}) async => const [];
 }
 
-/// A fake whose single job advances through the lifecycle as actions are called.
+/// A fake whose single job advances through the lifecycle as actions are called,
+/// and whose photo set can be seeded (for the mark-done gate).
 class _StatefulTechApi implements TechnicianApi {
-  JobStatus status = JobStatus.assigned;
+  _StatefulTechApi({this.status = JobStatus.assigned, this.photos = const []});
+
+  JobStatus status;
+  List<JobPhoto> photos;
 
   TechnicianJob get _job => TechnicianJob(
         id: 'bk_1',
@@ -207,4 +255,11 @@ class _StatefulTechApi implements TechnicianApi {
     status = s;
     return _job;
   }
+
+  @override
+  Future<List<JobPhoto>> jobPhotos(String id) async => photos;
+  @override
+  Future<List<JobPhoto>> uploadPhotos(
+          String id, PhotoKind kind, List<PhotoUpload> files) async =>
+      photos;
 }

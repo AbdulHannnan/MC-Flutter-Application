@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/core/network/api_exception.dart';
 import 'package:microcare/src/features/technician/data/supabase_technician_api.dart';
+import 'package:microcare/src/features/technician/data/technician_api.dart';
 import 'package:microcare/src/features/technician/data/technician_job.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
@@ -175,5 +176,56 @@ void main() {
       _api(adapter, token: 'jwt.sami').acknowledgeJob('bk_1'),
       throwsA(isA<ApiException>()),
     );
+  });
+
+  test('uploadPhotos POSTs multipart (kind + files) to /booking-photos/:id/photos',
+      () async {
+    final adapter = _FakeAdapter((o) => _json({
+          'data': [
+            {'id': 'ph_1', 'kind': 'before', 'url': 'bk_1/x.jpg'},
+          ],
+        }, status: 201));
+
+    final created = await _api(adapter, token: 'jwt.sami').uploadPhotos(
+      'bk_1',
+      PhotoKind.before,
+      const [
+        PhotoUpload(bytes: [1, 2, 3], filename: 'photo.jpg', contentType: 'image/jpeg'),
+      ],
+    );
+
+    final req = adapter.lastRequest!;
+    expect(req.method, 'POST');
+    expect(req.uri.path, '/functions/v1/booking-photos/bk_1/photos');
+    expect(req.headers.containsKey('apikey'), isTrue);
+    final form = req.data as FormData;
+    expect(form.fields.any((e) => e.key == 'kind' && e.value == 'before'), isTrue);
+    expect(form.files.map((e) => e.key), ['files']);
+    expect(form.files.single.value.contentType.toString(), 'image/jpeg');
+    expect(created.single.kind, PhotoKind.before);
+  });
+
+  test('jobPhotos GETs /booking-photos/:id/photos and parses signed URLs', () async {
+    final adapter = _FakeAdapter((o) => _json({
+          'data': {
+            'bookingId': 'bk_1',
+            'bucket': 'job-photos',
+            'photos': [
+              {
+                'id': 'ph_1',
+                'kind': 'after',
+                'url': 'bk_1/x.jpg',
+                'signedUrl': 'https://signed/x.jpg?token=abc',
+              },
+            ],
+          },
+        }));
+
+    final photos = await _api(adapter, token: 'jwt.sami').jobPhotos('bk_1');
+
+    expect(adapter.lastRequest!.uri.path,
+        '/functions/v1/booking-photos/bk_1/photos');
+    expect(photos.single.kind, PhotoKind.after);
+    expect(photos.single.signedUrl, 'https://signed/x.jpg?token=abc');
   });
 }

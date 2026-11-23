@@ -37,6 +37,15 @@ final technicianJobProvider =
   retry: technicianJobsRetry,
 );
 
+/// A job's before/after photos with short-lived viewable URLs. Separate from the
+/// detail because the signed URLs only come from the photos endpoint (the detail
+/// embed carries just the private object keys).
+final jobPhotosProvider =
+    FutureProvider.autoDispose.family<List<JobPhoto>, String>(
+  (ref, id) => ref.watch(technicianApiProvider).jobPhotos(id),
+  retry: technicianJobsRetry,
+);
+
 /// Job lifecycle actions (acknowledge / status change). Each performs the server
 /// call then refreshes the affected views — the job's own detail and the queue —
 /// so the UI reflects the new state. The screen owns the in-flight / error UI and
@@ -58,8 +67,21 @@ class JobActions {
     _refresh(id);
   }
 
+  /// Upload before/after photos, then refresh the photo strip (and the detail,
+  /// whose embedded photo set feeds the DONE gate).
+  Future<void> uploadPhotos(
+    String id,
+    PhotoKind kind,
+    List<PhotoUpload> files,
+  ) async {
+    await _api.uploadPhotos(id, kind, files);
+    _ref.invalidate(jobPhotosProvider(id));
+    _ref.invalidate(technicianJobProvider(id));
+  }
+
   void _refresh(String id) {
     _ref.invalidate(technicianJobProvider(id));
+    _ref.invalidate(jobPhotosProvider(id));
     _ref.invalidate(technicianJobsProvider); // the whole queue (every filter)
   }
 }

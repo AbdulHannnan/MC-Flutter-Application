@@ -112,14 +112,20 @@ class JobPhoto {
   final String id;
   final PhotoKind kind;
 
-  /// May be a relative path — callers resolve with assetUrl() before display.
+  /// The stored object key (Supabase private bucket) or relative path (Express).
+  /// NOT directly viewable on Supabase — use [signedUrl] for display there.
   final String url;
+
+  /// A short-lived viewable URL, present only on the photos GET (Supabase signs
+  /// the private object). Null on the job-detail embed and on Express.
+  final String? signedUrl;
   final String? createdAt;
 
   const JobPhoto({
     required this.id,
     required this.kind,
     required this.url,
+    this.signedUrl,
     this.createdAt,
   });
 
@@ -127,6 +133,7 @@ class JobPhoto {
         id: j['id'] as String,
         kind: PhotoKind.fromCode(j['kind'] as String?),
         url: (j['url'] ?? '') as String,
+        signedUrl: j['signedUrl'] as String?,
         createdAt: j['createdAt'] as String?,
       );
 }

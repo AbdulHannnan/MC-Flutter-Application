@@ -91,6 +91,31 @@ class SupabaseTechnicianApi implements TechnicianApi {
     );
     return TechnicianJob.fromJson(data);
   }
+
+  @override
+  Future<List<JobPhoto>> uploadPhotos(
+    String id,
+    PhotoKind kind,
+    List<PhotoUpload> files,
+  ) async {
+    final data = await _client.post<List<dynamic>>(
+      '/booking-photos/$id/photos',
+      body: buildPhotoFormData(kind, files),
+      headers: _gatewayHeaders,
+    );
+    return data
+        .map((e) => JobPhoto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<List<JobPhoto>> jobPhotos(String id) async {
+    final data = await _client.get<Map<String, dynamic>>(
+      '/booking-photos/$id/photos',
+      headers: _gatewayHeaders,
+    );
+    return parseJobPhotos(data);
+  }
 }
 
 /// An [ApiClient] for the SUPABASE technician Edge Function: base URL

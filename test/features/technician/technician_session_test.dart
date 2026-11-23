@@ -51,6 +51,14 @@ class _FakeTechApi implements TechnicianApi {
   @override
   Future<TechnicianJob> updateJobStatus(String id, JobStatus s) async =>
       throw UnimplementedError();
+
+  @override
+  Future<List<JobPhoto>> jobPhotos(String id) async => const [];
+
+  @override
+  Future<List<JobPhoto>> uploadPhotos(
+          String id, PhotoKind kind, List<PhotoUpload> files) async =>
+      throw UnimplementedError();
 }
 
 ProviderContainer _container(InMemoryTechnicianTokenStore store) {
