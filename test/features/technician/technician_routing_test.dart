@@ -13,8 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:microcare/main.dart';
 import 'package:microcare/src/app/app_router.dart';
-import 'package:microcare/src/core/network/api_client.dart';
-import 'package:microcare/src/features/auth/mock_auth_api.dart';
+import 'package:microcare/src/features/auth/auth.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:microcare/src/features/technician/data/technician_api.dart';
 import 'package:microcare/src/features/technician/data/technician_job.dart';
@@ -23,6 +22,8 @@ import 'package:microcare/src/features/technician/screens/technician_login_scree
 import 'package:microcare/src/features/technician/technician.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/fake_catalog.dart';
+import '../../support/fake_customer_auth.dart';
 import '../../support/welcome_gate.dart';
 
 /// In-memory technician token store — no platform keystore in tests.
@@ -95,14 +96,10 @@ class _FakeTechApi implements TechnicianApi {
 Widget _app({TechnicianTokenStore? techStore}) => ProviderScope(
       overrides: [
         skipWelcomeSplash,
-        mockAuthApiProvider
-            .overrideWithValue(MockAuthApi(latency: Duration.zero)),
+        customerAuthApiProvider
+            .overrideWithValue(FakeCustomerAuthApi(latency: Duration.zero)),
         catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
+          FakeCatalogSource(),
         ),
         // Always stub the keystore — an empty fake = signed-out technician.
         technicianTokenStoreProvider
@@ -117,7 +114,7 @@ GoRouter _routerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)))
         .read(routerProvider);
 
-Future<void> _seedCustomer() => MockAuthApi(latency: Duration.zero).signUp(
+Future<void> _seedCustomer() => FakeCustomerAuthApi(latency: Duration.zero).signUp(
       fullName: 'Jane Doe',
       email: 'jane@example.com',
       password: 'supersecret',

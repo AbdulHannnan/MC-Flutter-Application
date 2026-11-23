@@ -63,7 +63,7 @@ void main() {
     final c = ProviderContainer(
       overrides: [
         paymentApiProvider.overrideWithValue(
-          MockPaymentApi(latency: Duration.zero),
+          NoOpPaymentApi(latency: Duration.zero),
         ),
         bookingsApiProvider.overrideWithValue(bookings),
         ordersRepositoryProvider.overrideWithValue(orders),

@@ -21,7 +21,6 @@
 // (availability_providers.dart), which drops into the shared QueryBoundary for
 // loading / error / empty, exactly like the catalog providers.
 
-import '../../config/app_config.dart';
 import '../../core/format/date_time.dart';
 import '../../models/models.dart';
 
@@ -40,15 +39,15 @@ class AvailabilityRepository {
   /// The cosmetic latency to simulate (overridable to [Duration.zero] in tests).
   final Duration latency;
 
-  /// Whether demo "taken" slots are greyed out (defaults to CATALOG_MODE=mock, like
-  /// RN's `isMockCatalog`). The real system has no taken slots; this only makes the
-  /// disabled state demonstrable while on seed data.
+  /// Whether demo "taken" slots are greyed out. The real system has no taken
+  /// slots (defaults to false); a test can pass `demoTaken: true` to make the
+  /// disabled state demonstrable.
   final bool demoTaken;
 
   AvailabilityRepository({
     this.latency = kAvailabilityLatency,
-    bool? demoTaken,
-  }) : demoTaken = demoTaken ?? config.isMockCatalog;
+    this.demoTaken = false,
+  });
 
   /// One calendar day's slots ("YYYY-MM-DD"), in start-time order. Client-side by
   /// design — there is no backend availability endpoint. If one is ever added, this

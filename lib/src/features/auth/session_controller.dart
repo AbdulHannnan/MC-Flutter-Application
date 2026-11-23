@@ -14,32 +14,26 @@
 //   • signedIn  → `AsyncData(user)`.
 // Read it through the [SessionX] helpers below so screens don't re-derive that.
 //
-// THE SEAM: this talks to [mockAuthApiProvider] only. Swap the backend later and
-// only the provider changes; every screen that reads [sessionProvider] keeps
-// working — exactly the point of the provider-agnostic session model.
+// THE SEAM: this talks to [customerAuthApiProvider] (Supabase Auth) only. Every
+// screen reads [sessionProvider], not the backend — the point of the
+// provider-agnostic session model (and what lets tests inject a fake auth api).
 
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../config/app_config.dart';
 import '../../core/network/supabase_client.dart';
 import '../cart/cart.dart';
 import '../orders/orders_repository.dart';
 import 'auth_user.dart';
 import 'customer_auth_api.dart';
-import 'mock_auth_api.dart';
 import 'supabase_auth_api.dart';
 
-/// The customer-auth backend this build uses — Supabase Auth when selected +
-/// configured, otherwise the local mock (the proven fallback). The default mock
-/// branch delegates to [mockAuthApiProvider] so existing overrides keep working.
-final customerAuthApiProvider = Provider<CustomerAuthApi>((ref) {
-  if (config.isSupabaseAuth) {
-    return SupabaseAuthApi(ref.watch(supabaseClientProvider));
-  }
-  return ref.watch(mockAuthApiProvider);
-});
+/// The customer-auth backend: Supabase Auth. Exposed as the [CustomerAuthApi]
+/// seam so tests can override it with an in-memory fake.
+final customerAuthApiProvider = Provider<CustomerAuthApi>(
+  (ref) => SupabaseAuthApi(ref.watch(supabaseClientProvider)),
+);
 
 class SessionController extends AsyncNotifier<AuthUser?> {
   CustomerAuthApi get _api => ref.read(customerAuthApiProvider);

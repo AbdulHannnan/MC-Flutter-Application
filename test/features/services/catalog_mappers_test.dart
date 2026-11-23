@@ -67,11 +67,16 @@ void main() {
       expect(s.basePrice, const Money(amountMinor: 4000, currency: CurrencyCode.aed));
     });
 
-    test('relative imageUrl is made absolute', () {
-      final s = mapService(row());
+    test('a relative imageUrl yields no image (no origin post-cutover)', () {
+      // row()'s imageUrl is '/images/ac.jpg' — relative → placeholder.
+      expect(mapService(row()).image, isNull);
+    });
+
+    test('an absolute imageUrl is kept', () {
+      final r = row()..['imageUrl'] = 'https://cdn.example.com/ac.jpg';
+      final s = mapService(r);
       expect(s.image, isNotNull);
-      expect(s.image!.uri, endsWith('/images/ac.jpg'));
-      expect(s.image!.uri, startsWith('http'));
+      expect(s.image!.uri, 'https://cdn.example.com/ac.jpg');
     });
 
     test('passed-in add-ons are attached; none by default', () {

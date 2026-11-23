@@ -1,16 +1,14 @@
-// lib/src/features/checkout/payment_api.dart — the PAYMENT seam. Dart port of the
-// RN app's payment layer (N-Genius), MOCKED here behind an interface.
+// lib/src/features/checkout/payment_api.dart — the PAYMENT seam.
 //
-// README §MOCK: "Payments — N-Genius is mocked (behind a seam for a real drop-in
-// later)." So [PaymentApi] is the contract the checkout flow speaks; the real
-// N-Genius Flutter package drops in as a second implementation and only
-// [paymentApiProvider] changes — the checkout controller never learns which one
-// ran. The mock ALWAYS approves (per the module's chosen behaviour); the failure
-// path is still reachable when a booking submit errors after payment.
+// No payment gateway is wired yet. [PaymentApi] is the contract the checkout flow
+// speaks; the current [NoOpPaymentApi] simply approves (a clean pass-through), so
+// the booking flow completes end-to-end. A real gateway (e.g. N-Genius) drops in
+// as a second implementation and only [paymentApiProvider] changes — the checkout
+// controller never learns which one ran. The failure path stays reachable (a
+// booking submit that errors after "payment").
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../config/app_config.dart';
 import '../../core/util/ids.dart';
 import '../../models/models.dart';
 
@@ -44,13 +42,13 @@ abstract class PaymentApi {
   });
 }
 
-/// A short cosmetic delay so the "Paying…" state is visible in development.
-const Duration kMockPaymentLatency = Duration(milliseconds: 600);
+/// A short cosmetic delay so the "Paying…" state is visible.
+const Duration kNoOpPaymentLatency = Duration(milliseconds: 600);
 
-/// The mock gateway: always approves, after a short delay, with a generated
-/// transaction reference. Overridable to [Duration.zero] in tests.
-class MockPaymentApi implements PaymentApi {
-  MockPaymentApi({this.latency = kMockPaymentLatency});
+/// The no-op gateway: approves after a short delay with a generated reference.
+/// The seam a real gateway replaces. Overridable to [Duration.zero] in tests.
+class NoOpPaymentApi implements PaymentApi {
+  NoOpPaymentApi({this.latency = kNoOpPaymentLatency});
 
   final Duration latency;
 
@@ -67,12 +65,7 @@ class MockPaymentApi implements PaymentApi {
   static String _txnRef() => 'NGP-${randomSuffix().toUpperCase()}';
 }
 
-/// The single [PaymentApi] the checkout reads. Mock unless PAYMENTS_MODE=live —
-/// the real N-Genius SDK is not wired yet, so `live` fails loudly rather than
-/// silently no-op'ing a charge.
-final paymentApiProvider = Provider<PaymentApi>((ref) {
-  if (config.isMockPayments) return MockPaymentApi();
-  throw UnimplementedError(
-      'Live N-Genius payments are not wired yet (PAYMENTS_MODE=live). '
-      'Keep PAYMENTS_MODE=mock, or drop in the N-Genius PaymentApi here.');
-});
+/// The single [PaymentApi] the checkout reads — the no-op step for now. Swap this
+/// for a real gateway implementation when one is added.
+final paymentApiProvider =
+    Provider<PaymentApi>((ref) => NoOpPaymentApi());

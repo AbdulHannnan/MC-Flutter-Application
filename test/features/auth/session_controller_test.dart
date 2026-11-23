@@ -3,15 +3,15 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:microcare/src/features/auth/mock_auth_api.dart';
-import 'package:microcare/src/features/auth/session_controller.dart';
+import 'package:microcare/src/features/auth/auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../support/fake_customer_auth.dart';
 
 ProviderContainer _container() {
   final container = ProviderContainer(
     overrides: [
-      mockAuthApiProvider.overrideWithValue(
-        MockAuthApi(latency: Duration.zero),
+      customerAuthApiProvider.overrideWithValue(
+        FakeCustomerAuthApi(latency: Duration.zero),
       ),
     ],
   );

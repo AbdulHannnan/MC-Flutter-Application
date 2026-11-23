@@ -27,9 +27,7 @@ export 'auth_validation.dart'
         validateSignUp,
         validateLogin,
         validateResetRequest;
-export 'customer_auth_api.dart' show CustomerAuthApi;
-export 'mock_auth_api.dart'
-    show MockAuthApi, AuthError, mockAuthApiProvider, kMockAuthLatency;
+export 'customer_auth_api.dart' show CustomerAuthApi, AuthError;
 export 'session_controller.dart'
     show SessionController, sessionProvider, SessionX, customerAuthApiProvider;
 export 'supabase_auth_api.dart' show SupabaseAuthApi;

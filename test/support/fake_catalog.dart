@@ -1,50 +1,21 @@
-// lib/src/features/services/catalog_mock_data.dart — the seed CATALOG (Dart port
-// of the RN app's `src/features/services/mockData.ts`), AC services (Dubai).
+// test/support/fake_catalog.dart — an in-memory [CatalogSource] for widget/unit
+// tests, seeded with the AC-services sample catalog (Dubai). This was the app's
+// production mock catalog before the Supabase cutover; it now lives here so the
+// shipping app contains only the Supabase backend while tests keep a deterministic,
+// offline catalog to assert against.
 //
-// DECISION (mirrors RN): when `CATALOG_MODE=mock` the catalog is served from this
-// in-repo, typed seed dataset instead of the backend, so the app + tests run fully
-// offline. When the real backend is used (`CATALOG_MODE=live`, the default), only
-// the LIVE branch of [CatalogRepository] runs and this file is untouched.
-//
-// THE BUSINESS: an AC (air-conditioning) services company operating in Dubai — AC
-// cleaning, repair, installation, maintenance and duct/air-quality work. Prices are
-// in AED (UAE Dirham); durations are whole minutes.
-//
-// UNLIKE the live backend (which sends major-unit AED *strings* like "40.00" that
-// [Money.fromAed] converts), this seed is already in DOMAIN shape: [Money] in fils
-// via [_aed], and ready-built [Service]/[ServiceCategory] objects. So the mock
-// branch returns these directly with no adapting — the adapters only run on live
-// backend data.
-//
-// THREE WAYS TO PRICE A SERVICE:
-//   • OPTIONS  — single-select variants the user picks ONE of (e.g. "1 unit" vs
-//     "2 units"), each with its own price/duration. A service with no options is
-//     booked as-is at its base price.
-//   • ADD-ONS  — multi-select extras added ON TOP (e.g. "Gas top-up"), each adding
-//     its own price and optional extra time.
+// Use via: `catalogRepositoryProvider.overrideWithValue(FakeCatalogSource())`.
 
-import '../../models/models.dart';
+import 'package:microcare/src/features/services/catalog_repository.dart';
+import 'package:microcare/src/models/models.dart';
 
-// ── Tiny builders to keep the data below readable ────────────────────────────
-
-/// Money in AED fils: `_aed(12000)` → AED 120.00. (The seed is already in minor
-/// units — no string conversion, unlike the live backend.)
 Money _aed(int amountMinor) =>
     Money(amountMinor: amountMinor, currency: CurrencyCode.aed);
 
-/// A TOPICAL image that matches the service/category, served by LoremFlickr:
-/// [keywords] are comma-separated tags searched on Flickr (e.g.
-/// 'air,conditioner,cleaning') so the photo reflects the title; [lock] pins which
-/// matching photo is returned so images are stable and each item is distinct.
-/// These URLs are already absolute, so `assetUrl()` passes them through unchanged.
 ImageRef _img(String keywords, String alt, int lock) => ImageRef(
       uri: 'https://loremflickr.com/600/400/$keywords?lock=$lock',
       alt: alt,
     );
-
-// ── Shared add-ons ───────────────────────────────────────────────────────────
-// Defined once and reused across services so the same extra reads consistently.
-// (The user multi-selects any of a service's `addons`.)
 
 class _Addons {
   static final antiBacterial = ServiceAddon(
@@ -81,7 +52,6 @@ class _Addons {
     name: 'Emergency same-day',
     description: 'Priority scheduling for a technician on the same day.',
     price: _aed(7500),
-    // No added on-site time — it's a scheduling upgrade.
   );
   static final removeOldUnit = ServiceAddon(
     id: 'addon_remove_old_unit',
@@ -107,12 +77,7 @@ class _Addons {
   );
 }
 
-// ── Categories ───────────────────────────────────────────────────────────────
-// NOTE: these fine-grained categories exist ONLY in mock mode. The live backend
-// has no Category entity, so the live branch browses the single synthetic
-// [acServicesCategory] instead (see [CatalogRepository]).
-
-final List<ServiceCategory> kMockCategories = [
+final List<ServiceCategory> kFakeCategories = [
   ServiceCategory(
     id: 'cat_ac_cleaning',
     name: 'AC Cleaning',
@@ -127,8 +92,8 @@ final List<ServiceCategory> kMockCategories = [
     name: 'AC Repair',
     slug: 'ac-repair',
     description: 'Fast fixes for cooling, gas, compressor and controls.',
-    image: _img(
-        'air,conditioner,repair', 'A technician repairing an air conditioner', 12),
+    image: _img('air,conditioner,repair',
+        'A technician repairing an air conditioner', 12),
     sortOrder: 2,
   ),
   ServiceCategory(
@@ -159,12 +124,7 @@ final List<ServiceCategory> kMockCategories = [
   ),
 ];
 
-// ── Services ─────────────────────────────────────────────────────────────────
-// basePrice is the "from" price shown on cards — the cheapest option. Services
-// with no options (`options: []`) are booked as-is at basePrice/duration.
-
-final List<Service> kMockServices = [
-  // AC Cleaning ──────────────────────────────────────────────────────────────
+final List<Service> kFakeServices = [
   Service(
     id: 'svc_split_clean',
     categoryId: 'cat_ac_cleaning',
@@ -227,8 +187,6 @@ final List<Service> kMockServices = [
     ],
     addons: [_Addons.antiBacterial, _Addons.drainageFlush],
   ),
-
-  // AC Repair ──────────────────────────────────────────────────────────────
   Service(
     id: 'svc_not_cooling',
     categoryId: 'cat_ac_repair',
@@ -244,7 +202,7 @@ final List<Service> kMockServices = [
     duration: 45,
     rating: 4.7,
     ratingCount: 224,
-    options: [], // flat call-out — no sub-service choice
+    options: [],
     addons: [_Addons.gasTopUp, _Addons.emergency],
   ),
   Service(
@@ -302,8 +260,6 @@ final List<Service> kMockServices = [
     options: [],
     addons: [_Addons.emergency],
   ),
-
-  // AC Installation ──────────────────────────────────────────────────────────
   Service(
     id: 'svc_split_install',
     categoryId: 'cat_ac_install',
@@ -343,8 +299,6 @@ final List<Service> kMockServices = [
     options: [],
     addons: [_Addons.removeOldUnit],
   ),
-
-  // AC Maintenance ────────────────────────────────────────────────────────────
   Service(
     id: 'svc_tune_up',
     categoryId: 'cat_ac_maintenance',
@@ -387,8 +341,6 @@ final List<Service> kMockServices = [
     ],
     addons: [],
   ),
-
-  // Duct & Air Quality ────────────────────────────────────────────────────────
   Service(
     id: 'svc_duct_clean',
     categoryId: 'cat_ac_duct',
@@ -427,3 +379,48 @@ final List<Service> kMockServices = [
     addons: [],
   ),
 ];
+
+/// In-memory [CatalogSource] over the seed above, mirroring the old mock
+/// repository's filtering/lookup behaviour.
+class FakeCatalogSource implements CatalogSource {
+  @override
+  Future<List<ServiceCategory>> getCategories() async {
+    final ordered = [...kFakeCategories]
+      ..sort((a, b) => (a.sortOrder ?? 0).compareTo(b.sortOrder ?? 0));
+    return ordered;
+  }
+
+  @override
+  Future<List<Service>> getServices([ServiceQuery query = ServiceQuery.all]) async {
+    var results = kFakeServices.where((s) => s.active).toList();
+    if (query.categoryId != null) {
+      results = results.where((s) => s.categoryId == query.categoryId).toList();
+    }
+    final term = query.search?.toLowerCase();
+    if (term != null && term.isNotEmpty) {
+      results = results
+          .where((s) =>
+              s.name.toLowerCase().contains(term) ||
+              (s.summary?.toLowerCase().contains(term) ?? false) ||
+              (s.description?.toLowerCase().contains(term) ?? false))
+          .toList();
+    }
+    return results;
+  }
+
+  @override
+  Future<Service> getServiceById(String id) async {
+    for (final s in kFakeServices) {
+      if (s.id == id) return s;
+    }
+    throw ServiceNotFoundError(id);
+  }
+
+  @override
+  Future<ServiceCategory?> getCategoryById(String id) async {
+    for (final c in kFakeCategories) {
+      if (c.id == id) return c;
+    }
+    return null;
+  }
+}

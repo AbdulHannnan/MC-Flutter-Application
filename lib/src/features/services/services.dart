@@ -33,7 +33,7 @@ export 'catalog_providers.dart'
 
 export 'catalog_repository.dart'
     show
-        CatalogRepository,
+        CatalogSource,
         catalogRepositoryProvider,
         ServiceQuery,
         ServiceNotFoundError;

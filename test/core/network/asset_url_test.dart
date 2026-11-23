@@ -1,22 +1,16 @@
-// Verifies assetUrl() absolutizes relative backend image paths against the
-// configured API origin, and passes absolute/data URIs through unchanged. Under
-// a plain `flutter test`, config.apiBaseUrl resolves to the README default
-// (http://localhost:5050), so the expected origins below are deterministic.
+// Verifies assetUrl() passes absolute/data URIs through unchanged. Post-cutover
+// the app has no static-asset origin, so a relative path yields null (callers show
+// a placeholder); viewable images are already absolute (Supabase signed/public
+// URLs or any CDN).
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/src/core/network/asset_url.dart';
 
 void main() {
   group('assetUrl', () {
-    test('prepends the API origin to a relative path', () {
-      expect(
-        assetUrl('/images/services/ac.jpg'),
-        'http://localhost:5050/images/services/ac.jpg',
-      );
-    });
-
-    test('tolerates a missing leading slash', () {
-      expect(assetUrl('images/ac.jpg'), 'http://localhost:5050/images/ac.jpg');
+    test('returns null for a relative path (no origin to resolve against)', () {
+      expect(assetUrl('/images/services/ac.jpg'), isNull);
+      expect(assetUrl('images/ac.jpg'), isNull);
     });
 
     test('passes absolute http/https URLs through unchanged', () {

@@ -11,13 +11,14 @@
 // Orchestration: checkoutControllerProvider ([CheckoutController.pay]).
 
 export 'bookings_api.dart'
-    show BookingsApi, Customer, SubmittedBooking, bookingsApiProvider, buildDraftBody;
+    show BookingsApi, Customer, SubmittedBooking, bookingsApiProvider;
 export 'checkout_controller.dart'
     show CheckoutController, CheckoutOutcome, checkoutControllerProvider;
 export 'checkout_validation.dart' show CheckoutErrors, validateCheckout;
 export 'notifications.dart'
     show NotificationsService, notificationsServiceProvider;
-export 'payment_api.dart' show PaymentApi, PaymentResult, paymentApiProvider;
+export 'payment_api.dart'
+    show PaymentApi, PaymentResult, NoOpPaymentApi, paymentApiProvider;
 export 'supabase_bookings_api.dart'
     show
         SupabaseBookingsApi,

@@ -8,23 +8,22 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/features/services/catalog_providers.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:microcare/src/models/models.dart';
+import '../../support/fake_catalog.dart';
 
 /// A repository that counts calls and can be told to fail a number of times —
 /// used to observe retry/dedup behaviour at the provider layer.
-class _FakeRepo extends CatalogRepository {
-  _FakeRepo()
-    : super(
-        ApiClient(baseUrl: 'http://localhost:5050'),
-        useMock: true,
-        mockLatency: Duration.zero,
-      );
-
+class _FakeRepo implements CatalogSource {
   int getServicesCalls = 0;
   int getServiceByIdCalls = 0;
+
+  @override
+  Future<List<ServiceCategory>> getCategories() async => const [];
+
+  @override
+  Future<ServiceCategory?> getCategoryById(String id) async => null;
 
   @override
   Future<List<Service>> getServices([
@@ -42,7 +41,7 @@ class _FakeRepo extends CatalogRepository {
   }
 }
 
-ProviderContainer _containerWith(CatalogRepository repo) {
+ProviderContainer _containerWith(CatalogSource repo) {
   final container = ProviderContainer(
     overrides: [catalogRepositoryProvider.overrideWithValue(repo)],
   );
@@ -116,12 +115,8 @@ void main() {
   });
 
   group('popularServicesProvider', () {
-    // A real mock-seed repository so the sort runs over real catalog data.
-    CatalogRepository seedRepo() => CatalogRepository(
-      ApiClient(baseUrl: 'http://localhost:5050'),
-      useMock: true,
-      mockLatency: Duration.zero,
-    );
+    // A seeded fake so the sort runs over real catalog data.
+    CatalogSource seedRepo() => FakeCatalogSource();
 
     test('returns the top N by rating, highest first', () async {
       final container = _containerWith(seedRepo());

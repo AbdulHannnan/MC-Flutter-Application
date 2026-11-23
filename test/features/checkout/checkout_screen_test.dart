@@ -9,13 +9,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:microcare/main.dart';
 import 'package:microcare/src/app/app_router.dart';
-import 'package:microcare/src/features/auth/mock_auth_api.dart';
+import 'package:microcare/src/features/auth/auth.dart';
 import 'package:microcare/src/features/cart/cart_controller.dart';
 import 'package:microcare/src/features/checkout/bookings_api.dart';
 import 'package:microcare/src/features/checkout/payment_api.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/fake_customer_auth.dart';
 import '../../support/welcome_gate.dart';
 
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
@@ -35,17 +36,25 @@ CartItem _line() => CartItem(
   ),
 );
 
+/// A no-network bookings API that mints a local id + reference per submitted line.
+class _FakeBookingsApi implements BookingsApi {
+  int _seq = 0;
+  @override
+  Future<SubmittedBooking> submitDraft(CartItem line, Customer customer) async {
+    final n = _seq++;
+    return SubmittedBooking(id: 'bk_$n', reference: 'MC-TEST$n');
+  }
+}
+
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
         signedOutTechnician,
-    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    customerAuthApiProvider.overrideWithValue(FakeCustomerAuthApi(latency: Duration.zero)),
     paymentApiProvider.overrideWithValue(
-      MockPaymentApi(latency: Duration.zero),
+      NoOpPaymentApi(latency: Duration.zero),
     ),
-    bookingsApiProvider.overrideWithValue(
-      MockBookingsApi(latency: Duration.zero),
-    ),
+    bookingsApiProvider.overrideWithValue(_FakeBookingsApi()),
   ],
   child: const MicrocareApp(),
 );
@@ -59,7 +68,7 @@ GoRouter _routerOf(WidgetTester tester) =>
 String _loc(WidgetTester tester) =>
     _routerOf(tester).routerDelegate.currentConfiguration.uri.toString();
 
-Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
+Future<void> _seedSignedIn() => FakeCustomerAuthApi(latency: Duration.zero).signUp(
   fullName: 'Jane Doe',
   email: 'jane@example.com',
   password: 'supersecret',

@@ -13,6 +13,7 @@ import 'package:microcare/src/features/orders/orders_repository.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/fake_customer_auth.dart';
 import '../../support/welcome_gate.dart';
 
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
@@ -56,7 +57,7 @@ Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
         signedOutTechnician,
-    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    customerAuthApiProvider.overrideWithValue(FakeCustomerAuthApi(latency: Duration.zero)),
   ],
   child: const MicrocareApp(),
 );
@@ -64,7 +65,7 @@ Widget _app() => ProviderScope(
 ProviderContainer _containerOf(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MicrocareApp)));
 
-Future<AuthUser> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
+Future<AuthUser> _seedSignedIn() => FakeCustomerAuthApi(latency: Duration.zero).signUp(
   fullName: 'Jane Doe',
   email: 'jane@example.com',
   password: 'supersecret',

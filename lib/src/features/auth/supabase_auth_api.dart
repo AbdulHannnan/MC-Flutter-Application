@@ -22,7 +22,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
 import 'auth_user.dart';
 import 'customer_auth_api.dart';
-import 'mock_auth_api.dart' show AuthError;
 
 /// Map a Supabase [User] → our provider-agnostic [AuthUser]. first/last names come
 /// from the metadata set at sign-up; the display name is derived; the avatar is a

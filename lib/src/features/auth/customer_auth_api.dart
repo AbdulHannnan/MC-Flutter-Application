@@ -1,20 +1,26 @@
 // lib/src/features/auth/customer_auth_api.dart — the customer-auth contract the
 // session layer depends on, so the backend can be swapped behind it.
 //
-// Two implementations satisfy this: the in-app [MockAuthApi] (local, dev-only —
-// the proven fallback) and [SupabaseAuthApi] (real Supabase Auth). The
-// [customerAuthApiProvider] picks one from `AUTH_BACKEND`, and [SessionController]
-// speaks only this interface — so nothing in the session or the screens changes
-// when a build flips to Supabase.
-//
-// Failures surface as [AuthError] (a user-facing message) regardless of backend,
-// so the screens' `on AuthError` handling works the same for both.
+// [SupabaseAuthApi] implements this (real Supabase Auth); [customerAuthApiProvider]
+// wires it, and [SessionController] speaks only this interface so tests can override
+// it with an in-memory fake. Failures surface as [AuthError] (a user-facing message)
+// so the screens' `on AuthError` handling stays backend-agnostic.
 
-import '../../config/app_config.dart';
 import 'auth_user.dart';
 
+/// A typed auth failure carrying a user-facing message (mirrors a backend 4xx).
+/// Thrown by [CustomerAuthApi] implementations; screens catch it to show a
+/// form-level error.
+class AuthError implements Exception {
+  final String message;
+  const AuthError(this.message);
+
+  @override
+  String toString() => 'AuthError: $message';
+}
+
 /// The backend-agnostic customer-auth operations. Returns the provider-agnostic
-/// [AuthUser]; throws [AuthError] (defined in mock_auth_api.dart) on failure.
+/// [AuthUser]; throws [AuthError] on failure.
 abstract interface class CustomerAuthApi {
   /// The signed-in user restored from a persisted session, or null if none.
   Future<AuthUser?> getCurrentUser();
@@ -54,15 +60,9 @@ abstract interface class CustomerAuthApi {
 }
 
 /// A generated placeholder avatar so [AuthUser.imageUrl] is always a real URL
-/// (Supabase Auth email/password accounts have no avatar). Matches the mock's.
+/// (Supabase Auth email/password accounts have no avatar).
 String avatarUrlFor(String name) {
   final trimmed = name.trim();
   final encoded = Uri.encodeComponent(trimmed.isEmpty ? 'User' : trimmed);
   return 'https://ui-avatars.com/api/?name=$encoded&background=random';
 }
-
-/// The resolved auth source a build actually uses — `AUTH_BACKEND`, with the mock
-/// as the fallback when Supabase isn't selected/configured. Defined where the two
-/// implementations are wired ([customerAuthApiProvider]) to avoid an import cycle.
-AuthBackend get resolvedAuthBackend =>
-    config.isSupabaseAuth ? AuthBackend.supabase : AuthBackend.mock;

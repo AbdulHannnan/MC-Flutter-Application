@@ -35,10 +35,6 @@ Future<void> main() async {
   // backend(s) and flags this build actually loaded.
   if (kDebugMode) {
     debugPrint('[config] resolved:\n${config.describe()}');
-    if (!isApiBaseUrlValid) {
-      debugPrint('[config] WARNING: API_BASE_URL is empty. '
-          'Pass --dart-define-from-file=config/dev.json');
-    }
     debugPrint('[supabase] initialised: $supabaseReady'
         '${config.isSupabaseConfigured ? '' : ' (not configured — add '
             'SUPABASE_URL + SUPABASE_ANON_KEY to config/dev.json)'}');

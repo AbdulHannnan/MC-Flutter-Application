@@ -8,26 +8,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/main.dart';
 import 'package:microcare/src/app/app_router.dart';
-import 'package:microcare/src/core/network/api_client.dart';
-import 'package:microcare/src/features/auth/mock_auth_api.dart';
+import 'package:microcare/src/features/auth/auth.dart';
 import 'package:microcare/src/features/booking/booking.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:microcare/src/models/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../support/fake_catalog.dart';
+import '../../support/fake_customer_auth.dart';
 import '../../support/welcome_gate.dart';
 
 Widget _app() => ProviderScope(
   overrides: [
     skipWelcomeSplash,
         signedOutTechnician,
-    mockAuthApiProvider.overrideWithValue(MockAuthApi(latency: Duration.zero)),
+    customerAuthApiProvider.overrideWithValue(FakeCustomerAuthApi(latency: Duration.zero)),
     catalogRepositoryProvider.overrideWithValue(
-      CatalogRepository(
-        ApiClient(baseUrl: 'http://localhost:5050'),
-        useMock: true,
-        mockLatency: Duration.zero,
-      ),
+      FakeCatalogSource(),
     ),
     availabilityRepositoryProvider.overrideWithValue(
       AvailabilityRepository(latency: Duration.zero, demoTaken: false),
@@ -42,7 +39,7 @@ ProviderContainer _containerOf(WidgetTester tester) =>
 BookingDraft _draft(WidgetTester tester) =>
     _containerOf(tester).read(bookingDraftProvider);
 
-Future<void> _seedSignedIn() => MockAuthApi(latency: Duration.zero).signUp(
+Future<void> _seedSignedIn() => FakeCustomerAuthApi(latency: Duration.zero).signUp(
   fullName: 'Jane Doe',
   email: 'jane@example.com',
   password: 'supersecret',

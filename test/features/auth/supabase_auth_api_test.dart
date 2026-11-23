@@ -6,7 +6,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/src/features/auth/auth_user.dart';
-import 'package:microcare/src/features/auth/mock_auth_api.dart' show AuthError;
+import 'package:microcare/src/features/auth/customer_auth_api.dart' show AuthError;
 import 'package:microcare/src/features/auth/supabase_auth_api.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 

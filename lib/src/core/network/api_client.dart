@@ -18,9 +18,7 @@
 // back the decoded JSON (or throws).
 
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../config/app_config.dart';
 import 'api_exception.dart';
 
 /// An async function that yields the current bearer token, or `null` if none.
@@ -43,9 +41,9 @@ class ApiClient {
   AuthTokenProvider? _tokenProvider;
   String? _authToken;
 
-  ApiClient({Dio? dio, String? baseUrl}) : _dio = dio ?? Dio() {
+  ApiClient({Dio? dio, required String baseUrl}) : _dio = dio ?? Dio() {
     _dio.options
-      ..baseUrl = baseUrl ?? config.apiBaseUrl
+      ..baseUrl = baseUrl
       ..connectTimeout = kApiTimeout
       ..receiveTimeout = kApiTimeout
       ..responseType = ResponseType.json
@@ -231,8 +229,3 @@ class ApiClient {
     return out.isEmpty ? null : out;
   }
 }
-
-/// The single [ApiClient] the whole app reads. Feature code depends on this
-/// provider so the client can be overridden with a fake in tests — the idiomatic
-/// Flutter replacement for the RN module-level `api` singleton.
-final apiClientProvider = Provider<ApiClient>((ref) => ApiClient());

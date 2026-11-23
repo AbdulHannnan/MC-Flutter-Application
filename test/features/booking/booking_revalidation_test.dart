@@ -6,13 +6,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/src/core/format/date_time.dart';
-import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/features/booking/availability_providers.dart';
 import 'package:microcare/src/features/booking/availability_repository.dart';
 import 'package:microcare/src/features/booking/booking_controller.dart';
 import 'package:microcare/src/features/booking/booking_revalidation.dart';
 import 'package:microcare/src/features/services/catalog_repository.dart';
 import 'package:microcare/src/models/models.dart';
+import '../../support/fake_catalog.dart';
 
 Money _aed(int minor) => Money(amountMinor: minor, currency: CurrencyCode.aed);
 
@@ -49,11 +49,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         catalogRepositoryProvider.overrideWithValue(
-          CatalogRepository(
-            ApiClient(baseUrl: 'http://localhost:5050'),
-            useMock: true,
-            mockLatency: Duration.zero,
-          ),
+          FakeCatalogSource(),
         ),
         availabilityRepositoryProvider.overrideWithValue(_avail),
       ],

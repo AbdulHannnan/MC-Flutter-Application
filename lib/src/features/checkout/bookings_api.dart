@@ -1,29 +1,13 @@
-// lib/src/features/checkout/bookings_api.dart — the BOOKING SUBMIT seam. Dart
-// port of the RN app's bookings API (`createBooking` → POST /api/bookings/draft).
+// lib/src/features/checkout/bookings_api.dart — the BOOKING SUBMIT seam.
 //
-// This is the ONE place the app talks to the real backend for writes. Per cart
-// line, it sends the draft body the user confirmed for Module 14:
-//   { source:"app", serviceId, optionId?, addonIds[], quantity,
-//     scheduledDate, scheduledTime, location{addressText,area?,coords?},
-//     customer{name,phone,email}, notes? }
-// HARD RULES honoured: `source:"app"` is top-level + lowercase (rule #3); NO
-// prices are ever sent (the server computes them — rule #3); NO `userId` is sent.
-//
-// ⚠️ FIELD-NAME SEAM: the exact wire field names were assembled from the README
-// constraints + the documented `scheduledDate`/`scheduledTime` shape, not copied
-// from a live contract. If the backend names differ, [_buildBody] is the single
-// spot to adjust — nothing else in the app changes.
-//
-// TWO IMPLEMENTATIONS, chosen by BOOKINGS_MODE (rule §config):
-//   • live → POST to the backend, return the server's booking id + reference.
-//   • mock → no server; mint a local id + reference so the flow works offline.
-// (Order HISTORY is always local — see features/orders — regardless of this.)
+// Per cart line, the booking is placed on Supabase (create-draft → finalize-booking
+// Edge Functions; see supabase_bookings_api.dart). This file holds the backend-
+// agnostic contract ([BookingsApi]) + its value types, so the checkout controller
+// depends only on the seam and tests can override it with a fake.
+// (Order HISTORY is always local — see features/orders.)
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../config/app_config.dart';
-import '../../core/format/date_time.dart';
-import '../../core/network/api_client.dart';
 import '../../core/network/supabase_client.dart';
 import '../../models/models.dart';
 import 'supabase_bookings_api.dart';
@@ -51,84 +35,8 @@ abstract class BookingsApi {
   Future<SubmittedBooking> submitDraft(CartItem line, Customer customer);
 }
 
-/// Build the `POST /api/bookings/draft` body for one line. Shared by both
-/// implementations (the mock echoes it back) so the wire shape lives in one place.
-Map<String, dynamic> buildDraftBody(CartItem line, Customer customer) {
-  final slot = line.slot;
-  final location = line.location;
-  return {
-    'source': 'app', // top-level, lowercase (rule #3)
-    'serviceId': line.serviceId,
-    if (line.optionId != null) 'optionId': line.optionId,
-    'addonIds': line.addons.map((a) => a.id).toList(),
-    'quantity': line.quantity,
-    if (slot != null) 'scheduledDate': slot.start, // ISO datetime
-    if (slot != null) 'scheduledTime': formatTime(slot.start), // "10:00 AM"
-    if (location != null)
-      'location': {
-        'addressText': location.addressText,
-        if (location.area != null) 'area': location.area,
-        if (location.coords != null)
-          'coords': {'lat': location.coords!.lat, 'lng': location.coords!.lng},
-      },
-    'customer': {
-      'name': customer.name,
-      'phone': customer.phone,
-      'email': customer.email,
-    },
-    if (line.notes != null) 'notes': line.notes,
-    // NB: NO unitPrice / total / userId — the server owns pricing and identity.
-  };
-}
-
-/// Live path: POST the draft and read back the server's booking id + reference.
-class LiveBookingsApi implements BookingsApi {
-  LiveBookingsApi(this._api);
-
-  final ApiClient _api;
-
-  @override
-  Future<SubmittedBooking> submitDraft(CartItem line, Customer customer) async {
-    final data = await _api.post<Map<String, dynamic>>(
-      '/api/bookings/draft',
-      body: buildDraftBody(line, customer),
-    );
-    return SubmittedBooking(
-      id: (data['id'] ?? data['bookingId'] ?? '').toString(),
-      reference: (data['reference'] ?? data['ref'] ?? data['id'] ?? '').toString(),
-    );
-  }
-}
-
-/// Mock path: no server. Mint a local id + reference so checkout works offline.
-class MockBookingsApi implements BookingsApi {
-  MockBookingsApi({this.latency = const Duration(milliseconds: 300)});
-
-  final Duration latency;
-  int _seq = 0;
-
-  @override
-  Future<SubmittedBooking> submitDraft(CartItem line, Customer customer) async {
-    if (latency > Duration.zero) await Future<void>.delayed(latency);
-    final n = DateTime.now().millisecondsSinceEpoch + _seq++;
-    return SubmittedBooking(
-      id: 'bk_$n',
-      reference: 'MC-${n.toRadixString(36).toUpperCase().substring(0, 5)}',
-    );
-  }
-}
-
-/// The single [BookingsApi] the checkout reads. Chosen by the build's flags, with
-/// Express as the proven fallback:
-///   • `BOOKINGS_MODE=mock`               → local mock (no server).
-///   • live + `BOOKINGS_BACKEND=supabase` → [SupabaseBookingsApi] (create-draft →
-///                                          finalize-booking; needs a Supabase
-///                                          session — see config.isSupabaseBookings).
-///   • live (default)                     → Express `POST /api/bookings/draft`.
-final bookingsApiProvider = Provider<BookingsApi>((ref) {
-  if (config.isMockBookings) return MockBookingsApi();
-  if (config.isSupabaseBookings) {
-    return SupabaseBookingsApi(ref.watch(supabaseClientProvider));
-  }
-  return LiveBookingsApi(ref.read(apiClientProvider));
-});
+/// The single [BookingsApi] the checkout reads (Supabase), as the seam so it can
+/// be overridden with a fake in tests.
+final bookingsApiProvider = Provider<BookingsApi>(
+  (ref) => SupabaseBookingsApi(ref.watch(supabaseClientProvider)),
+);
