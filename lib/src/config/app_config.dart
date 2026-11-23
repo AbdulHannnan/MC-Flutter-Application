@@ -74,18 +74,21 @@ const String _catalogModeRaw =
     String.fromEnvironment('CATALOG_MODE', defaultValue: 'live');
 const String _bookingsModeRaw =
     String.fromEnvironment('BOOKINGS_MODE', defaultValue: 'live');
-// Which backend each live path targets during the migration. Default `express`
-// (the proven fallback); set to `supabase` once that path is verified on-device.
+// Which backend each live path targets. Default `supabase` (the app's backend);
+// the paths can still be flipped back to the legacy `express` with a --dart-define
+// for debugging. Each only takes effect when Supabase is configured (URL + key),
+// otherwise it safely falls back to Express.
 const String _catalogBackendRaw =
-    String.fromEnvironment('CATALOG_BACKEND', defaultValue: 'express');
+    String.fromEnvironment('CATALOG_BACKEND', defaultValue: 'supabase');
 const String _bookingsBackendRaw =
-    String.fromEnvironment('BOOKINGS_BACKEND', defaultValue: 'express');
+    String.fromEnvironment('BOOKINGS_BACKEND', defaultValue: 'supabase');
 const String _technicianBackendRaw =
-    String.fromEnvironment('TECHNICIAN_BACKEND', defaultValue: 'express');
-// Customer auth source. Default `mock` (the proven local fallback); set to
-// `supabase` once real Supabase Auth is verified on-device.
+    String.fromEnvironment('TECHNICIAN_BACKEND', defaultValue: 'supabase');
+// Customer auth source. Default `supabase` (real Supabase Auth); can be flipped
+// to the local `mock` with a --dart-define. Only takes effect when Supabase is
+// configured, otherwise it falls back to the mock.
 const String _authBackendRaw =
-    String.fromEnvironment('AUTH_BACKEND', defaultValue: 'mock');
+    String.fromEnvironment('AUTH_BACKEND', defaultValue: 'supabase');
 const String _paymentsModeRaw =
     String.fromEnvironment('PAYMENTS_MODE', defaultValue: 'mock');
 const String _ngeniusEnvRaw =

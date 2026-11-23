@@ -38,26 +38,40 @@ void main() {
       expect(config.isSupabaseConfigured, isFalse);
     });
 
-    test('catalog backend defaults to Express (the proven fallback)', () {
-      expect(config.catalog.backend, Backend.express);
-      // The Supabase catalog is only "active" when the flag is supabase AND
-      // Supabase is configured — neither holds by default.
-      expect(config.isSupabaseCatalog, isFalse);
+    // After the cutover every backend defaults to Supabase. In THIS test env no
+    // SUPABASE_URL/key is passed, so Supabase isn't configured and each path still
+    // resolves to its safe fallback (the `isSupabase*` getters stay false) — which
+    // is exactly the "falls back when unconfigured" guarantee.
+    test('catalog backend defaults to Supabase (inactive until configured)', () {
+      expect(config.catalog.backend, Backend.supabase);
+      expect(config.isSupabaseCatalog, isFalse); // not configured here
     });
 
-    test('auth backend defaults to the mock (the proven fallback)', () {
-      expect(config.authBackend, AuthBackend.mock);
+    test('auth backend defaults to Supabase (inactive until configured)', () {
+      expect(config.authBackend, AuthBackend.supabase);
       expect(config.isSupabaseAuth, isFalse);
     });
 
-    test('bookings backend defaults to Express (the proven fallback)', () {
-      expect(config.bookings.backend, Backend.express);
+    test('bookings backend defaults to Supabase (inactive until configured)', () {
+      expect(config.bookings.backend, Backend.supabase);
       expect(config.isSupabaseBookings, isFalse);
     });
 
-    test('technician backend defaults to Express (the proven fallback)', () {
-      expect(config.technicianBackend, Backend.express);
+    test('technician backend defaults to Supabase (inactive until configured)', () {
+      expect(config.technicianBackend, Backend.supabase);
       expect(config.isSupabaseTechnician, isFalse);
+    });
+
+    // The cutover invariant: once Supabase IS configured (URL + key) and NO
+    // per-path backend flags are passed, EVERY path resolves to Supabase. Runs
+    // meaningfully under `flutter test --dart-define=SUPABASE_URL=… --dart-define=
+    // SUPABASE_ANON_KEY=…`; a no-op in the plain suite where Supabase is unset.
+    test('configured + no flags ⇒ every path is Supabase', () {
+      if (!config.isSupabaseConfigured) return; // skipped when unconfigured
+      expect(config.isSupabaseCatalog, isTrue);
+      expect(config.isSupabaseAuth, isTrue);
+      expect(config.isSupabaseBookings, isTrue);
+      expect(config.isSupabaseTechnician, isTrue);
     });
 
     test('describe() lists every key and never prints the anon key', () {
