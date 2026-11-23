@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:microcare/src/core/network/api_client.dart';
 import 'package:microcare/src/core/network/api_exception.dart';
 import 'package:microcare/src/features/technician/data/supabase_technician_api.dart';
+import 'package:microcare/src/features/technician/data/technician_job.dart';
 
 class _FakeAdapter implements HttpClientAdapter {
   _FakeAdapter(this.handler);
@@ -137,5 +138,42 @@ void main() {
     expect(adapter.lastRequest!.uri.path, '/functions/v1/technician/jobs/bk_1');
     expect(job.id, 'bk_1');
     expect(job.total!.amountMinor, 13500);
+  });
+
+  test('acknowledge PATCHes /technician/jobs/:id/acknowledge (no body)', () async {
+    final adapter = _FakeAdapter((o) => _json({
+          'data': {'id': 'bk_1', 'jobStatus': 'ACKNOWLEDGED'},
+        }));
+    final job = await _api(adapter, token: 'jwt.sami').acknowledgeJob('bk_1');
+
+    final req = adapter.lastRequest!;
+    expect(req.method, 'PATCH');
+    expect(req.uri.path, '/functions/v1/technician/jobs/bk_1/acknowledge');
+    expect(req.headers['Authorization'], 'Bearer jwt.sami');
+    expect(req.data, isNull); // no body
+    expect(job.jobStatus, JobStatus.acknowledged);
+  });
+
+  test('updateJobStatus PATCHes /status with the jobStatus code', () async {
+    final adapter = _FakeAdapter((o) => _json({
+          'data': {'id': 'bk_1', 'jobStatus': 'IN_PROGRESS'},
+        }));
+    final job = await _api(adapter, token: 'jwt.sami')
+        .updateJobStatus('bk_1', JobStatus.inProgress);
+
+    final req = adapter.lastRequest!;
+    expect(req.method, 'PATCH');
+    expect(req.uri.path, '/functions/v1/technician/jobs/bk_1/status');
+    expect((req.data as Map)['jobStatus'], 'IN_PROGRESS');
+    expect(job.jobStatus, JobStatus.inProgress);
+  });
+
+  test('a 409 wrong-transition surfaces as an ApiException', () async {
+    final adapter = _FakeAdapter((o) =>
+        _json({'error': 'Cannot acknowledge a job that is DONE.'}, status: 409));
+    await expectLater(
+      _api(adapter, token: 'jwt.sami').acknowledgeJob('bk_1'),
+      throwsA(isA<ApiException>()),
+    );
   });
 }

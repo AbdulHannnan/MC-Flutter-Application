@@ -74,6 +74,14 @@ class _FakeTechApi implements TechnicianApi {
 
   @override
   Future<TechnicianJob> job(String id) async => throw UnimplementedError();
+
+  @override
+  Future<TechnicianJob> acknowledgeJob(String id) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<TechnicianJob> updateJobStatus(String id, JobStatus s) async =>
+      throw UnimplementedError();
 }
 
 Widget _app({TechnicianTokenStore? techStore}) => ProviderScope(

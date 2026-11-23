@@ -36,3 +36,32 @@ final technicianJobProvider =
   (ref, id) => ref.watch(technicianApiProvider).job(id),
   retry: technicianJobsRetry,
 );
+
+/// Job lifecycle actions (acknowledge / status change). Each performs the server
+/// call then refreshes the affected views — the job's own detail and the queue —
+/// so the UI reflects the new state. The screen owns the in-flight / error UI and
+/// awaits these; a server rejection (e.g. 409 wrong transition, or DONE without
+/// the required photos) propagates as the thrown [ApiException] for it to surface.
+class JobActions {
+  JobActions(this._ref);
+  final Ref _ref;
+
+  TechnicianApi get _api => _ref.read(technicianApiProvider);
+
+  Future<void> acknowledge(String id) async {
+    await _api.acknowledgeJob(id);
+    _refresh(id);
+  }
+
+  Future<void> setStatus(String id, JobStatus status) async {
+    await _api.updateJobStatus(id, status);
+    _refresh(id);
+  }
+
+  void _refresh(String id) {
+    _ref.invalidate(technicianJobProvider(id));
+    _ref.invalidate(technicianJobsProvider); // the whole queue (every filter)
+  }
+}
+
+final jobActionsProvider = Provider<JobActions>(JobActions.new);

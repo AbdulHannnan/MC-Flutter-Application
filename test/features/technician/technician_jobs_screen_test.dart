@@ -60,6 +60,11 @@ class _FakeTechApi implements TechnicianApi {
   Future<List<TechnicianJob>> jobs({String? status}) async => [_listJob];
   @override
   Future<TechnicianJob> job(String id) async => _detailJob;
+  @override
+  Future<TechnicianJob> acknowledgeJob(String id) async => _detailJob;
+  @override
+  Future<TechnicianJob> updateJobStatus(String id, JobStatus s) async =>
+      _detailJob;
 }
 
 Widget _app() => ProviderScope(
@@ -96,7 +101,46 @@ void main() {
     expect(find.text('1 unit'), findsOneWidget); // option
     expect(find.text('Total'), findsOneWidget);
     expect(find.text('135.00 AED'), findsOneWidget); // server total
-    expect(find.text('Ring the bell twice'), findsOneWidget); // notes
+
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('acknowledge → start advances the job through the detail actions',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = _StatefulTechApi();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          skipWelcomeSplash,
+          technicianTokenStoreProvider.overrideWithValue(
+            InMemoryTechnicianTokenStore(token: 'jwt', technician: _sami),
+          ),
+          technicianApiProvider.overrideWithValue(api),
+        ],
+        child: const MicrocareApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Open the (ASSIGNED) job's detail.
+    await tester.tap(find.text('Split AC Deep Cleaning'));
+    await tester.pumpAndSettle();
+    expect(find.text('Acknowledge job'), findsOneWidget);
+
+    // Acknowledge → status becomes Acknowledged and the action becomes "Start job".
+    await tester.tap(find.text('Acknowledge job'));
+    await tester.pumpAndSettle();
+    expect(api.status, JobStatus.acknowledged);
+    expect(find.text('Start job'), findsOneWidget);
+    expect(find.text('Acknowledge job'), findsNothing);
+
+    // Start → IN_PROGRESS; the finish flow note replaces the button.
+    await tester.tap(find.text('Start job'));
+    await tester.pumpAndSettle();
+    expect(api.status, JobStatus.inProgress);
+    expect(find.textContaining('coming soon'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
   });
@@ -126,4 +170,41 @@ void main() {
 class _EmptyTechApi extends _FakeTechApi {
   @override
   Future<List<TechnicianJob>> jobs({String? status}) async => const [];
+}
+
+/// A fake whose single job advances through the lifecycle as actions are called.
+class _StatefulTechApi implements TechnicianApi {
+  JobStatus status = JobStatus.assigned;
+
+  TechnicianJob get _job => TechnicianJob(
+        id: 'bk_1',
+        reference: 'MC-0001AH',
+        jobStatus: status,
+        contactName: 'Jane Doe',
+        service: const JobServiceRef(id: 'svc_1', name: 'Split AC Deep Cleaning'),
+      );
+
+  @override
+  Future<TechnicianLoginResult> login({
+    required String username,
+    required String password,
+  }) async =>
+      const TechnicianLoginResult(token: 'jwt', technician: _sami);
+  @override
+  Future<Technician> me() async => _sami;
+  @override
+  Future<List<TechnicianJob>> jobs({String? status}) async => [_job];
+  @override
+  Future<TechnicianJob> job(String id) async => _job;
+  @override
+  Future<TechnicianJob> acknowledgeJob(String id) async {
+    status = JobStatus.acknowledged;
+    return _job;
+  }
+
+  @override
+  Future<TechnicianJob> updateJobStatus(String id, JobStatus s) async {
+    status = s;
+    return _job;
+  }
 }

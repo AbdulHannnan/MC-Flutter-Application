@@ -1,14 +1,22 @@
 // lib/src/features/technician/screens/technician_job_detail_screen.dart — one
-// job's full detail for the assigned technician (read-only this module).
+// job's full detail + its lifecycle actions.
 //
-// Reads technicianJobProvider(id) and lays out the job: service + option, when,
-// where, the customer contact, the line items + total, notes, and any before/after
-// photos. Acknowledge / status / photo-upload actions land in later modules.
+// Reads technicianJobProvider(id) for the data and drives the job forward with the
+// bottom action bar, keyed off jobStatus:
+//   ASSIGNED      → "Acknowledge job"  (acknowledge)
+//   ACKNOWLEDGED  → "Start job"        (status → IN_PROGRESS)
+//   IN_PROGRESS   → (photos + "Mark done" land in the next module)
+//   DONE          → no action
+// The action's in-flight / error UI is owned here (a button spinner + a SnackBar
+// carrying the server's message, e.g. a 409 wrong-transition); on success the
+// providers are refreshed so the status + button update. The data stays visible
+// during that refetch (skipLoadingOnReload).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/format/date_time.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/network/asset_url.dart';
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/widgets.dart';
@@ -16,27 +24,133 @@ import '../data/technician_job.dart';
 import '../jobs_providers.dart';
 import '../widgets/job_status_pill.dart';
 
-class TechnicianJobDetailScreen extends ConsumerWidget {
+class TechnicianJobDetailScreen extends ConsumerStatefulWidget {
   const TechnicianJobDetailScreen({super.key, required this.jobId});
 
   final String jobId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final job = ref.watch(technicianJobProvider(jobId));
+  ConsumerState<TechnicianJobDetailScreen> createState() =>
+      _TechnicianJobDetailScreenState();
+}
+
+class _TechnicianJobDetailScreenState
+    extends ConsumerState<TechnicianJobDetailScreen> {
+  bool _submitting = false;
+
+  Future<void> _run(Future<void> Function() action) async {
+    setState(() => _submitting = true);
+    try {
+      await action();
+      // Providers are invalidated inside JobActions → the job refetches and the
+      // status/button update; nothing else to do here.
+    } on ApiException catch (e) {
+      _toast(e.message);
+    } catch (_) {
+      _toast('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _toast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _acknowledge() =>
+      _run(() => ref.read(jobActionsProvider).acknowledge(widget.jobId));
+
+  void _start() => _run(() =>
+      ref.read(jobActionsProvider).setStatus(widget.jobId, JobStatus.inProgress));
+
+  @override
+  Widget build(BuildContext context) {
+    final job = ref.watch(technicianJobProvider(widget.jobId));
 
     return Scaffold(
       appBar: AppBar(
         title: const AppText('Job detail', variant: AppTextVariant.subheading),
       ),
       body: SafeArea(
+        // Footer pinned via Expanded(list) + trailing bar (not a
+        // bottomNavigationBar, which collapses the list's height here).
         child: job.when(
+          skipLoadingOnReload: true,
           loading: () => const LoadingState(),
           error: (_, _) => ErrorState(
-            onRetry: () => ref.invalidate(technicianJobProvider(jobId)),
+            onRetry: () => ref.invalidate(technicianJobProvider(widget.jobId)),
           ),
-          data: (j) => _JobDetail(job: j),
+          data: (j) => Column(
+            children: [
+              Expanded(child: _JobDetail(job: j)),
+              _ActionBar(
+                status: j.jobStatus,
+                submitting: _submitting,
+                onAcknowledge: _acknowledge,
+                onStart: _start,
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// The pinned action for the job's current status (null when there's nothing to do).
+class _ActionBar extends StatelessWidget {
+  const _ActionBar({
+    required this.status,
+    required this.submitting,
+    required this.onAcknowledge,
+    required this.onStart,
+  });
+
+  final JobStatus status;
+  final bool submitting;
+  final VoidCallback onAcknowledge;
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, onPressed) = switch (status) {
+      JobStatus.assigned => ('Acknowledge job', onAcknowledge),
+      JobStatus.acknowledged => ('Start job', onStart),
+      _ => (null, null),
+    };
+
+    // IN_PROGRESS: the finish flow (photos + mark done) arrives next module.
+    final Widget inner = (label == null)
+        ? (status == JobStatus.inProgress
+            ? const AppText(
+                'Add before & after photos to finish — coming soon.',
+                variant: AppTextVariant.caption,
+                color: AppTextColor.muted,
+                textAlign: TextAlign.center,
+              )
+            : const SizedBox.shrink())
+        : AppButton(
+            label: label,
+            size: AppButtonSize.lg,
+            fullWidth: true,
+            loading: submitting,
+            onPressed: onPressed,
+          );
+
+    if (inner is SizedBox) return inner; // nothing to show (e.g. DONE)
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(top: BorderSide(color: AppColors.border)),
+        ),
+        child: inner,
       ),
     );
   }
@@ -130,8 +244,7 @@ class _JobDetail extends StatelessWidget {
   }
 }
 
-/// A titled block with a divider above it (skips the divider on the first one via
-/// the surrounding list spacing).
+/// A titled block.
 class _Section extends StatelessWidget {
   const _Section({required this.title, required this.child});
   final String title;
@@ -163,8 +276,7 @@ class _LineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final variant =
-        strong ? AppTextVariant.bodyStrong : AppTextVariant.body;
+    final variant = strong ? AppTextVariant.bodyStrong : AppTextVariant.body;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs / 2),
       child: Row(

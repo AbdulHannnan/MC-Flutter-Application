@@ -72,6 +72,25 @@ class SupabaseTechnicianApi implements TechnicianApi {
     );
     return TechnicianJob.fromJson(data);
   }
+
+  @override
+  Future<TechnicianJob> acknowledgeJob(String id) async {
+    final data = await _client.patch<Map<String, dynamic>>(
+      '/technician/jobs/$id/acknowledge',
+      headers: _gatewayHeaders,
+    );
+    return TechnicianJob.fromJson(data);
+  }
+
+  @override
+  Future<TechnicianJob> updateJobStatus(String id, JobStatus status) async {
+    final data = await _client.patch<Map<String, dynamic>>(
+      '/technician/jobs/$id/status',
+      body: {'jobStatus': status.code},
+      headers: _gatewayHeaders,
+    );
+    return TechnicianJob.fromJson(data);
+  }
 }
 
 /// An [ApiClient] for the SUPABASE technician Edge Function: base URL

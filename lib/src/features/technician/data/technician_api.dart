@@ -49,6 +49,17 @@ abstract interface class TechnicianApi {
 
   /// One owned job's full detail. Throws [ApiException] 404 if it isn't theirs.
   Future<TechnicianJob> job(String id);
+
+  /// Acknowledge an ASSIGNED job (ASSIGNED → ACKNOWLEDGED). Idempotent if already
+  /// acknowledged; throws [ApiException] 409 from any other state. Returns the
+  /// updated job detail.
+  Future<TechnicianJob> acknowledgeJob(String id);
+
+  /// Move a job to [status] (IN_PROGRESS or DONE). The server enforces the
+  /// lifecycle (ACKNOWLEDGED→IN_PROGRESS→DONE) and that DONE needs ≥1 before + ≥1
+  /// after photo — an invalid move throws [ApiException] 409. Returns the updated
+  /// job detail.
+  Future<TechnicianJob> updateJobStatus(String id, JobStatus status);
 }
 
 /// Parse a jobs-list response body (a JSON array) — shared by both backends.
@@ -107,6 +118,23 @@ class ExpressTechnicianApi implements TechnicianApi {
   Future<TechnicianJob> job(String id) async {
     final data =
         await _client.get<Map<String, dynamic>>('/api/technician/jobs/$id');
+    return TechnicianJob.fromJson(data);
+  }
+
+  @override
+  Future<TechnicianJob> acknowledgeJob(String id) async {
+    final data = await _client.patch<Map<String, dynamic>>(
+      '/api/technician/jobs/$id/acknowledge',
+    );
+    return TechnicianJob.fromJson(data);
+  }
+
+  @override
+  Future<TechnicianJob> updateJobStatus(String id, JobStatus status) async {
+    final data = await _client.patch<Map<String, dynamic>>(
+      '/api/technician/jobs/$id/status',
+      body: {'jobStatus': status.code},
+    );
     return TechnicianJob.fromJson(data);
   }
 }
