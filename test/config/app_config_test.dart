@@ -38,6 +38,13 @@ void main() {
       expect(config.isSupabaseConfigured, isFalse);
     });
 
+    test('catalog backend defaults to Express (the proven fallback)', () {
+      expect(config.catalog.backend, Backend.express);
+      // The Supabase catalog is only "active" when the flag is supabase AND
+      // Supabase is configured — neither holds by default.
+      expect(config.isSupabaseCatalog, isFalse);
+    });
+
     test('describe() lists every key and never prints the anon key', () {
       final text = config.describe();
       for (final key in const [
@@ -47,6 +54,7 @@ void main() {
         'supabaseKey',
         'supabaseReady',
         'catalog.mode',
+        'catalog.backend',
         'bookings.mode',
         'payments.mode',
         'ngeniusEnv',

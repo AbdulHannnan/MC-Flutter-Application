@@ -27,6 +27,12 @@ enum AppEnv { development, preview, production }
 /// [live] calls the real backend API. Catalog and bookings flip independently.
 enum DataMode { mock, live }
 
+/// Which REAL backend a `live` path talks to during the Express→Supabase
+/// migration: the legacy [express] server (the proven fallback) or [supabase]
+/// (Postgres + RLS + Edge Functions). Each path flips independently, one proven
+/// module at a time; the default stays [express] until a path is verified.
+enum Backend { express, supabase }
+
 /// Which payment implementation runs: the in-repo [mock], or the real N-Genius
 /// SDK ([live]).
 enum PaymentsMode { mock, live }
@@ -63,6 +69,10 @@ const String _catalogModeRaw =
     String.fromEnvironment('CATALOG_MODE', defaultValue: 'live');
 const String _bookingsModeRaw =
     String.fromEnvironment('BOOKINGS_MODE', defaultValue: 'live');
+// Which backend each live path targets during the migration. Default `express`
+// (the proven fallback); set to `supabase` once that path is verified on-device.
+const String _catalogBackendRaw =
+    String.fromEnvironment('CATALOG_BACKEND', defaultValue: 'express');
 const String _paymentsModeRaw =
     String.fromEnvironment('PAYMENTS_MODE', defaultValue: 'mock');
 const String _ngeniusEnvRaw =
@@ -84,6 +94,10 @@ const DataMode _catalogMode =
     _catalogModeRaw == 'live' ? DataMode.live : DataMode.mock;
 const DataMode _bookingsMode =
     _bookingsModeRaw == 'live' ? DataMode.live : DataMode.mock;
+// Anything other than exactly "supabase" resolves to express (the safe fallback),
+// so a typo can never silently point a live path at the wrong backend.
+const Backend _catalogBackend =
+    _catalogBackendRaw == 'supabase' ? Backend.supabase : Backend.express;
 const PaymentsMode _paymentsMode =
     _paymentsModeRaw == 'live' ? PaymentsMode.live : PaymentsMode.mock;
 const NgeniusEnv _ngeniusEnv =
@@ -95,9 +109,15 @@ const PushMode _pushMode =
 
 /// Service catalog source: where categories / services / add-ons come from.
 class CatalogConfig {
-  /// [DataMode.live] = `GET /api/services` + `/api/addons`; [DataMode.mock] = seed data.
+  /// [DataMode.live] = the real catalog backend; [DataMode.mock] = seed data.
   final DataMode mode;
-  const CatalogConfig({required this.mode});
+
+  /// When [mode] is live, which backend serves the catalog: [Backend.express]
+  /// (`GET /api/services` + `/api/addons`) or [Backend.supabase] (supabase-js
+  /// reads of the `Service`/`Addon` tables, RLS-guarded). Ignored when mock.
+  final Backend backend;
+
+  const CatalogConfig({required this.mode, this.backend = Backend.express});
 }
 
 /// Bookings destination: where a submitted booking draft goes.
@@ -159,6 +179,14 @@ class AppConfig {
   bool get isDev => appEnv == AppEnv.development;
   bool get isProd => appEnv == AppEnv.production;
   bool get isMockCatalog => catalog.mode == DataMode.mock;
+
+  /// True when the catalog should be served from Supabase: a live catalog whose
+  /// backend is Supabase AND Supabase is actually configured. Falls back to
+  /// Express if the flag is set but no URL/key is present (safe by default).
+  bool get isSupabaseCatalog =>
+      catalog.mode == DataMode.live &&
+      catalog.backend == Backend.supabase &&
+      isSupabaseConfigured;
   bool get isMockBookings => bookings.mode == DataMode.mock;
   bool get isMockPayments => payments.mode == PaymentsMode.mock;
   bool get isMockPush => push.mode == PushMode.mock;
@@ -179,6 +207,7 @@ class AppConfig {
         'supabaseKey   : ${supabaseAnonKey.isEmpty ? '(unset)' : 'present'}',
         'supabaseReady : $isSupabaseConfigured',
         'catalog.mode  : ${catalog.mode.name}',
+        'catalog.backend: ${catalog.backend.name}${isSupabaseCatalog ? ' (active)' : ''}',
         'bookings.mode : ${bookings.mode.name}',
         'payments.mode : ${payments.mode.name}',
         'ngeniusEnv    : ${payments.ngeniusEnv.name}',
@@ -192,7 +221,7 @@ const AppConfig config = AppConfig(
   apiBaseUrl: _apiBaseUrlRaw,
   supabaseUrl: _supabaseUrlRaw,
   supabaseAnonKey: _supabaseAnonKeyRaw,
-  catalog: CatalogConfig(mode: _catalogMode),
+  catalog: CatalogConfig(mode: _catalogMode, backend: _catalogBackend),
   bookings: BookingsConfig(mode: _bookingsMode),
   payments: PaymentsConfig(mode: _paymentsMode, ngeniusEnv: _ngeniusEnv),
   push: PushConfig(mode: _pushMode),

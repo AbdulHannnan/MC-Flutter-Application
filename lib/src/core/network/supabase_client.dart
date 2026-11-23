@@ -32,12 +32,13 @@ Future<bool> initSupabase() async {
   if (!config.isSupabaseConfigured) return false;
   await Supabase.initialize(
     url: config.supabaseUrl,
-    // The classic project ANON key (a JWT), as the booking website uses and as
-    // the user supplies. supabase_flutter 2.18 deprecates `anonKey` in favour of
-    // `publishableKey` (the newer `sb_publishable_…` format), but a classic anon
-    // key belongs on `anonKey` — so we keep it and silence the deprecation here.
-    // ignore: deprecated_member_use
-    anonKey: config.supabaseAnonKey,
+    // The project's public key, sent as the `apikey` on every call (RLS guards
+    // the data). This project issues the newer `sb_publishable_…` publishable
+    // key, which belongs on `publishableKey` (supabase_flutter 2.18 deprecated
+    // the classic `anonKey`). The config key is still named SUPABASE_ANON_KEY to
+    // match the booking website's env var; it simply holds whichever public key
+    // the project uses.
+    publishableKey: config.supabaseAnonKey,
     // Persist + auto-refresh the customer's session across app restarts (the
     // Flutter analog of the website's localStorage persistence). Uses
     // flutter_secure_storage under the hood on mobile.

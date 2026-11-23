@@ -28,9 +28,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_config.dart';
 import '../../core/network/api_client.dart';
-import '../../core/network/asset_url.dart';
+import '../../core/network/supabase_client.dart';
 import '../../models/models.dart';
+import 'catalog_mappers.dart';
 import 'catalog_mock_data.dart';
+import 'supabase_catalog_repository.dart';
 
 /// Filters for listing services. Its value equality is what makes it a stable
 /// CACHE KEY for `servicesProvider` — two queries that normalise to the same
@@ -80,9 +82,20 @@ class ServiceNotFoundError implements Exception {
 }
 
 /// The catalog data source. Construct with an [ApiClient] (used only in live
+/// The catalog read contract the caching layer + screens depend on. Both the
+/// Express/mock [CatalogRepository] and the [SupabaseCatalogRepository] implement
+/// it, so [catalogRepositoryProvider] can serve either behind the SAME type —
+/// nothing downstream changes when a build flips `CATALOG_BACKEND`.
+abstract interface class CatalogSource {
+  Future<List<ServiceCategory>> getCategories();
+  Future<List<Service>> getServices([ServiceQuery query]);
+  Future<Service> getServiceById(String id);
+  Future<ServiceCategory?> getCategoryById(String id);
+}
+
 /// mode) and the mock/live toggle; both are injected so tests can drive either
 /// branch. Feature code reads [catalogRepositoryProvider] instead.
-class CatalogRepository {
+class CatalogRepository implements CatalogSource {
   final ApiClient _api;
 
   /// When true, serve the in-repo seed instead of calling the backend.
@@ -101,6 +114,7 @@ class CatalogRepository {
   // ── Public API ─────────────────────────────────────────────────────────────
 
   /// All categories, in display order.
+  @override
   Future<List<ServiceCategory>> getCategories() async {
     if (!useMock) {
       // No Category entity server-side — the app browses one synthetic group.
@@ -113,13 +127,14 @@ class CatalogRepository {
   }
 
   /// Active services, optionally filtered by category and/or a search term.
+  @override
   Future<List<Service>> getServices([ServiceQuery query = ServiceQuery.all]) async {
     if (!useMock) {
       // GET /api/services returns ALL active services (with their options[]).
       // There is no filter/search endpoint (spec §3), so we do both on the device.
       final raw = await _api.get<List<dynamic>>('/api/services');
       var results = raw
-          .map((e) => _mapService(e as Map<String, dynamic>))
+          .map((e) => mapService(e as Map<String, dynamic>))
           .toList();
 
       // Single synthetic category: a categoryId filter matches all services or none.
@@ -159,6 +174,7 @@ class CatalogRepository {
   }
 
   /// A single service by id. Throws [ServiceNotFoundError] if it doesn't exist.
+  @override
   Future<Service> getServiceById(String id) async {
     if (!useMock) {
       // No get-one endpoint (spec §3): fetch the list and find the id. In
@@ -176,9 +192,9 @@ class CatalogRepository {
             orElse: () => throw ServiceNotFoundError(id),
           );
       final addons = rawAddons
-          .map((e) => _mapAddon(e as Map<String, dynamic>))
+          .map((e) => mapServiceAddon(e as Map<String, dynamic>))
           .toList();
-      return _mapService(found, addons);
+      return mapService(found, addons);
     }
 
     await _delay();
@@ -189,6 +205,7 @@ class CatalogRepository {
   }
 
   /// A single category by id. Returns null if it doesn't exist.
+  @override
   Future<ServiceCategory?> getCategoryById(String id) async {
     if (!useMock) {
       return id == acServicesCategory.id ? acServicesCategory : null;
@@ -205,65 +222,24 @@ class CatalogRepository {
   Future<void> _delay() =>
       mockLatency == Duration.zero ? Future.value() : Future.delayed(mockLatency);
 
-  // ── Live backend: adapters (raw JSON → our domain types) ─────────────────────
-  //
-  // The raw shapes (spec §3) are read structurally from the decoded JSON rather
-  // than through typed classes — nothing outside this file sees them. Adapting
-  // matches the RN `mapOption`/`mapAddon`/`mapService` exactly.
-
-  /// One price-tier option. Backend `label` → our `name`; no server duration → 0.
-  ServiceOption _mapOption(Map<String, dynamic> o) => ServiceOption(
-        id: o['id'] as String,
-        name: o['label'] as String,
-        price: Money.fromAed(o['price']),
-        duration: 0,
-      );
-
-  /// One add-on. Add-ons carry no duration server-side, so we leave it unset.
-  ServiceAddon _mapAddon(Map<String, dynamic> a) => ServiceAddon(
-        id: a['id'] as String,
-        name: a['name'] as String,
-        description: (a['description'] as String?),
-        price: Money.fromAed(a['price']),
-      );
-
-  /// A backend service → our [Service]. Add-ons come from a separate endpoint, so
-  /// callers that need them (the detail lookup) pass them in; list views map none.
-  Service _mapService(Map<String, dynamic> s, [List<ServiceAddon> addons = const []]) {
-    final options = (s['options'] as List<dynamic>? ?? const [])
-        .map((e) => _mapOption(e as Map<String, dynamic>))
-        .toList();
-
-    // basePrice = the cheapest option (the "from" price on cards); 0 with none.
-    final basePrice = options.isEmpty
-        ? Money.fromAed(0)
-        : options
-            .map((o) => o.price)
-            .reduce((min, p) => p.amountMinor < min.amountMinor ? p : min);
-
-    final imageUri = assetUrl(s['imageUrl'] as String?);
-
-    return Service(
-      id: s['id'] as String,
-      categoryId: acServicesCategory.id,
-      name: s['name'] as String,
-      slug: s['slug'] as String,
-      description: s['description'] as String?,
-      image: imageUri == null ? null : ImageRef(uri: imageUri, alt: s['name'] as String),
-      basePrice: basePrice,
-      duration: 0, // backend has no durations (spec §3); the UI hides a 0 duration.
-      options: options,
-      addons: addons,
-      active: s['isActive'] as bool? ?? true,
-    );
-  }
+  // Live JSON→domain adapting lives in catalog_mappers.dart (shared with the
+  // Supabase backend), since Express and Supabase return the same per-entity
+  // shapes.
 }
 
-/// The single [CatalogRepository] the whole app reads. Wired to the shared
-/// [apiClientProvider] and the build's `CATALOG_MODE` — the idiomatic Flutter
-/// replacement for the RN module-level `servicesApi` singleton. Overridable with a
-/// fake in tests.
-final catalogRepositoryProvider = Provider<CatalogRepository>((ref) {
-  final api = ref.watch(apiClientProvider);
-  return CatalogRepository(api, useMock: config.isMockCatalog);
+/// The single catalog source the whole app reads, as the shared [CatalogSource]
+/// interface. Chosen by the build's flags, with Express as the proven fallback:
+///   • `CATALOG_MODE=mock`               → in-repo seed data.
+///   • live + `CATALOG_BACKEND=supabase` → [SupabaseCatalogRepository] (only when
+///                                         Supabase is configured; else Express).
+///   • live (default)                    → Express `GET /api/services` + `/api/addons`.
+/// Overridable with a fake in tests (any [CatalogSource]).
+final catalogRepositoryProvider = Provider<CatalogSource>((ref) {
+  if (config.isMockCatalog) {
+    return CatalogRepository(ref.watch(apiClientProvider), useMock: true);
+  }
+  if (config.isSupabaseCatalog) {
+    return SupabaseCatalogRepository(ref.watch(supabaseClientProvider));
+  }
+  return CatalogRepository(ref.watch(apiClientProvider), useMock: false);
 });
