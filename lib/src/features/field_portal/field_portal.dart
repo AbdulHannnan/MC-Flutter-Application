@@ -8,5 +8,6 @@
 // is: delete this folder + unregister its route + run the backend teardown.
 //
 // Import the feature's public surface from here.
+export 'data/field_job_api.dart';
 export 'field_job_form.dart';
 export 'screens/field_job_portal_screen.dart';
