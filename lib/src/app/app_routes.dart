@@ -30,6 +30,11 @@ class AppRoutes {
   static const String technicianJob = '/technician/jobs/:id';
   static String technicianJobOf(String id) => '/technician/jobs/$id';
 
+  /// TEMPORARY — Field Job Portal (see FIELD_PORTAL_REMOVAL.md). Under the
+  /// technician area (so [isTechnicianArea] already admits it). Remove this line +
+  /// its route at teardown.
+  static const String fieldPortal = '/technician/field-portal';
+
   /// Whether [location] is inside the technician (staff) area — the home or any
   /// `/technician/...` sub-route (jobs, detail), but NOT the public
   /// [technicianLogin]. Used by the guard to admit a signed-in technician and keep

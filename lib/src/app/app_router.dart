@@ -36,6 +36,8 @@ import '../features/cart/screens/cart_screen.dart';
 import '../features/checkout/screens/checkout_failure_screen.dart';
 import '../features/checkout/screens/checkout_screen.dart';
 import '../features/checkout/screens/checkout_success_screen.dart';
+// TEMPORARY — Field Job Portal (see FIELD_PORTAL_REMOVAL.md). Remove at teardown.
+import '../features/field_portal/field_portal.dart';
 import '../features/orders/screens/order_detail_screen.dart';
 import '../features/orders/screens/orders_screen.dart';
 import '../features/services/screens/categories_screen.dart';
@@ -116,6 +118,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.technicianJob,
         builder: (context, state) =>
             TechnicianJobDetailScreen(jobId: state.pathParameters['id']!),
+      ),
+      // TEMPORARY — Field Job Portal (see FIELD_PORTAL_REMOVAL.md). In the
+      // technician area, so the role guard already restricts it to technicians.
+      GoRoute(
+        path: AppRoutes.fieldPortal,
+        builder: (context, state) => const FieldJobPortalScreen(),
       ),
       GoRoute(
         path: AppRoutes.categories,

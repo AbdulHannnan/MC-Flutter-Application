@@ -33,6 +33,13 @@ class TechnicianHomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const AppText('My jobs', variant: AppTextVariant.subheading),
         actions: [
+          // TEMPORARY — Field Job Portal entry (see FIELD_PORTAL_REMOVAL.md).
+          // Remove this IconButton at teardown.
+          IconButton(
+            tooltip: 'Field Job Portal',
+            icon: const Icon(Icons.assignment_outlined),
+            onPressed: () => context.push(AppRoutes.fieldPortal),
+          ),
           TextButton(
             onPressed: () =>
                 ref.read(technicianSessionProvider.notifier).logout(),
